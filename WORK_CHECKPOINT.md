@@ -4,8 +4,8 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## Current implementation
 
-- Version: `1.3.5`
-- Implementation commit: `59edc962c821a455c8369c1f3d44bbd87ec5729a`.
+- Version: `1.3.6`
+- Implementation commit: `a3b1fac7e85736d1d18471e6b81ca27cf9c92d21`.
 - Checkpoint commit before release: `f5e22b2d3df26d458493a8b414e605860759b162`.
 - Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
 
@@ -26,6 +26,15 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Local package: `LocalDrive-1.3.5-Setup-win-x64.exe`, `8,683,520` bytes (8.28 MiB). Its intermediate setup ZIP is `8,487,329` bytes and includes the `7,993,714`-byte compact engine archive.
 - Verification: .NET publish and IExpress package build succeeded; installer PowerShell parsed; embedded engine digest matched installer pin; package contents checked for app, installer and exactly one engine archive; `git diff --check` passed. Live installation, account sign-in, mount and remote file operations not run.
 
+## Bundled WinFsp installer (current work)
+
+- Implementation commit: `a3b1fac7e85736d1d18471e6b81ca27cf9c92d21`.
+- Version `1.3.6` keeps the existing rclone `mount`/WinFsp architecture and embeds the official unmodified WinFsp 2.1.25156 MSI inside the single setup EXE. If WinFsp is already installed, setup skips it; if absent, setup verifies the MSI SHA-256 and Authenticode signer, then installs it with the normal Windows administrator prompt.
+- Release build fetches the official MSI from WinFsp's v2.1 release and the build script verifies its hash and `NAVIMATICS LLC` signature before bundling. The MSI is excluded from the installed app directory. The WinFsp license accompanies the packaged installer.
+- Verified MSI: `2,191,360` bytes; SHA-256 `073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A`; Authenticode status `Valid`.
+- Local package: `LocalDrive-1.3.6-Setup-win-x64.exe`, `10,084,352` bytes (~9.62 MiB). The inner setup ZIP is `9,892,154` bytes and includes exactly one WinFsp MSI, the compact rclone engine, app, installer and license.
+- Verification: .NET publish and IExpress packaging succeeded; PowerShell scripts parsed; package entries and MSI digest/signature checked; compact engine smoke checks passed for TeraBox, `mount`, `lsjson`, and version, with `serve webdav` absent; `git diff --check` passed. Installation, live account sign-in, and TeraBox transfers have not been run.
+
 ## Verification
 
 - Shipped engine before: `84,690,432` bytes. Compact executable: `20,217,344` bytes (~76.1% smaller).
@@ -44,9 +53,11 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Published release: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.5
 - GitHub Actions: https://github.com/RaghavSharma006/LocalDrive/actions/runs/40180167303 (success).
 - Release metadata confirms exactly one asset: `LocalDrive-1.3.5-Setup-win-x64.exe`, `8,671,232` bytes (~8.27 MiB).
+- `v1.3.6` code is committed locally; push and release workflow verification are pending.
 - Previous published release: `v1.3.3`, https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3.
 
 ## Remaining work
 
-1. User should install `v1.3.5` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. No live account test is claimed from package validation alone.
-2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
+1. Push commit `a3b1fac7e85736d1d18471e6b81ca27cf9c92d21` to `main`, create and push tag `v1.3.6`, then verify GitHub Actions and that the release contains one EXE asset.
+2. Update this checkpoint with the final release URL, workflow status and asset size, then commit and push the checkpoint.
+3. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. No live account test is claimed from package validation alone.
