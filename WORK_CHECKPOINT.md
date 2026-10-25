@@ -21,12 +21,11 @@ Updated 25 October 2026. Current implementation commit: `e707b4bea8b01f2383477ea
 
 ## Deployment
 
-- Implementation commit `e707b4bea8b01f2383477ea2726cbfa519d98494` is local on `main`; push and tag `v1.3.3` are pending.
-- GitHub release URL after publishing: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3
+- Implementation commit `e707b4bea8b01f2383477ea2726cbfa519d98494` and checkpoint commit `c1ef77d84865f1f0febeba29103d2b548924621a` were pushed to `main`; tag `v1.3.3` was pushed.
+- GitHub Actions run `40177341632` completed successfully. Published https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3 with `LocalDrive-1.3.3-Setup-win-x64.exe` (598,016 bytes) and `LocalDrive-1.3.3-Setup-win-x64.zip` (501,326 bytes).
 - The setup EXE is unsigned and may trigger SmartScreen's unknown-publisher warning; the ZIP remains available.
 
 ## Remaining work and exact next steps
 
-1. Push `main` and tag `v1.3.3` to `origin` so GitHub Actions builds and publishes the EXE and ZIP.
-2. Check the release workflow result and verify both release assets are present and their sizes match the local package.
-3. Restart Codex to reload the REA MCP environment, then run REA against the shipped rclone binary. The WinFsp MSI is a package container and is not directly accepted as a native binary by REA; inventory its installed/runtime payload if analysis is still needed.
+1. Restart Codex to reload the REA MCP environment, then run REA against the shipped rclone binary. The WinFsp MSI is a package container and is not directly accepted as a native binary by REA; inventory its installed/runtime payload if analysis is still needed.
+2. If correcting any source after release, build a new patch version and publish it under a new tag; do not replace the existing v1.3.3 release assets silently.
