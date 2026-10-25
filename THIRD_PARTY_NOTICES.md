@@ -1,6 +1,6 @@
 # Third-party components
 
-The build/package script downloads these pinned runtime components. It verifies them before packaging.
+The online setup downloads these runtime components only when required and verifies them before installation. The compact ZIP does not bundle the engine or platform runtimes.
 
 ## rclone-extra
 
@@ -18,6 +18,13 @@ The build/package script downloads these pinned runtime components. It verifies 
 - Installer: `winfsp-2.1.25156.msi`
 - SHA-256: `073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A`
 - License: GPLv3 with the FLOSS exception; see [`licenses/WinFsp-License.txt`](licenses/WinFsp-License.txt).
+
+## Microsoft .NET Desktop Runtime
+
+- Version family: .NET 10 Windows Desktop Runtime, x64.
+- Download: official Microsoft .NET 10 channel installer (`https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe`).
+- The installer signature is validated as Microsoft-signed before it runs.
+- WPF and Windows Forms desktop apps require the Windows Desktop Runtime; it is not included in the compact setup ZIP.
 
 ## Microsoft WebView2
 

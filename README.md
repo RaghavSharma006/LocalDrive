@@ -4,12 +4,14 @@ LocalDrive mounts your TeraBox account as a Windows drive letter. Browse and man
 
 ## Download and install
 
-1. Download the latest `LocalDrive-<version>-Setup-win-x64.zip` from GitHub Releases.
-2. Extract the ZIP to a folder.
-3. Run `Setup-LocalDrive.cmd` and accept the Windows prompt if WinFsp needs to be installed.
+1. Download `LocalDrive-<version>-Setup-win-x64.zip` from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases).
+2. Extract the ZIP and run `Setup-LocalDrive.cmd`.
+3. Accept the Windows prompt if setup needs to install the WinFsp filesystem driver.
 4. Open **LocalDrive** from the Start menu and sign in.
 
-Setup installs the app for the current Windows user. It installs the signed WinFsp filesystem driver if needed, and Microsoft WebView2 Runtime if missing. WinFsp installation may request administrator approval. Settings and the encrypted sign-in are kept under `%LOCALAPPDATA%\LocalDrive`.
+The ZIP is a compact online installer. It contains the LocalDrive app and setup scripts; setup downloads the pinned TeraBox engine and installs signed Windows runtimes only when missing. An internet connection is needed during setup. The installed app uses the .NET 10 Desktop Runtime, WebView2 Runtime, WinFsp, and the TeraBox engine. Downloads are checksum-verified or signature-verified before use. The full engine still takes disk space after installation; keeping it out of every user's download ZIP makes the package much smaller.
+
+Settings and the encrypted sign-in are kept under `%LOCALAPPDATA%\LocalDrive`.
 
 ## Connect your account
 
@@ -28,21 +30,23 @@ LocalDrive keeps its own WebView2 sign-in profile. It does not read another brow
 - **Cleanup target:** the GB value limits old cached data that rclone can remove. It does not reserve that amount of disk space. Open files and pending uploads can temporarily exceed it. New settings take effect after disconnecting and reconnecting.
 - **Safe disconnect:** LocalDrive checks for pending uploads before stopping the mount. Close files that are open from the virtual drive, wait for uploads, then disconnect.
 
-Closing the window keeps LocalDrive running in the notification area. Use its tray menu to reopen, disconnect, or exit. Exit waits for the mount to finish before quitting.
+When the window is open, transfer checks slow to once a minute while idle and speed up while uploads are active. Closing the window stops UI polling and keeps the app in the notification area; the rclone mount continues handling drive requests and queued transfers. Open the window to refresh transfer status. Use the tray menu to reopen, disconnect, or exit. Exit checks for pending uploads before quitting.
+
+Directory listings are cached for up to two minutes to reduce repeated cloud lookups. New remote changes may take that long to appear unless the folder is refreshed after the cache expires.
 
 ## Build from source
 
-Requirements: Windows x64 and the .NET 10 SDK. The build script fetches pinned runtime dependencies, checks their hashes or publisher signatures, and produces the same setup archive as the release workflow.
+Requirements: Windows x64 and the .NET 10 SDK. The build script creates the same compact online setup archive as the release workflow. Runtime installers and the engine are fetched and verified by setup, not bundled into the ZIP.
 
 ```powershell
 ./Build-Standalone.ps1
 ```
 
-The output archive is named `LocalDrive-<version>-Setup-win-x64.zip`. Runtime binaries and installer payloads are downloaded during packaging and are not committed to Git. The source bundle includes third-party notices and required licenses in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
+The output archive is named `LocalDrive-<version>-Setup-win-x64.zip`. The source repository excludes generated binaries, downloaded runtimes, archives, caches, and logs. Third-party notices and required licenses are included in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
 
 ## Security and support limits
 
-The TeraBox connection uses a community-maintained, unofficial backend because a general public API for mounting a complete personal account is not available. The backend uses the TeraBox web session and can stop working if the provider changes its service. Its release is pinned and verified by SHA-256 during packaging. Review [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the exact source, version, and license.
+The TeraBox connection uses a community-maintained, unofficial backend because a general public API for mounting a complete personal account is not available. The backend uses the TeraBox web session and can stop working if the provider changes its service. Its release is pinned and verified by SHA-256 during setup. Review [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the exact source, version, and license.
 
 The app does not bypass Windows security. Whether a particular executable runs from a cloud-backed drive depends on Windows and that program's own requirements. Cloud latency, provider throttling, or expired sign-in can affect response times and transfers.
 
@@ -53,6 +57,7 @@ The app does not bypass Windows security. Whether a particular executable runs f
 - **Cache cannot be used:** choose a writable folder on an available drive and keep it separate from the selected mount letter.
 - **Disconnect waits:** close applications that are using files on the drive and wait for pending uploads to finish.
 - **Drive does not mount:** confirm WinFsp is installed, then reconnect. Restart Windows if a driver installation requested it.
+- **Setup says it cannot download a dependency:** retry on a stable connection. Setup verifies the published engine checksum and Microsoft/WinFsp signatures before installation.
 
 ## Repository contents
 

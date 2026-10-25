@@ -37,7 +37,7 @@ internal sealed class DriveWindow : Window
     private readonly Button themeToggle = new() { Content = "Dark mode", Width = 100, Padding = new Thickness(8) };
     private readonly TextBlock cacheLocation = new() { TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock transfers = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-    private readonly System.Windows.Threading.DispatcherTimer transferTimer = new() { Interval = TimeSpan.FromSeconds(10) };
+    private readonly System.Windows.Threading.DispatcherTimer transferTimer = new() { Interval = TimeSpan.FromSeconds(60) };
     private bool checkingTransfers;
     private Process? process;
     private HttpClient? rc;
@@ -191,6 +191,11 @@ internal sealed class DriveWindow : Window
     private void RestoreFromTray()
     {
         Show(); ShowInTaskbar = true; WindowState = WindowState.Normal; Activate();
+        if (process != null && !process.HasExited && rc != null)
+        {
+            transferTimer.Start();
+            _ = UpdateTransfersAsync();
+        }
     }
 
     private async Task ExitFromTrayAsync()
@@ -307,7 +312,7 @@ internal sealed class DriveWindow : Window
             info.ArgumentList.Add("mount"); info.ArgumentList.Add("localdrive:"); info.ArgumentList.Add(selected);
             int cacheSizeGb = CacheSettings.LoadSizeGb();
             foreach (string arg in MountConfiguration.CommonArguments(cacheDirectory, cacheSizeGb)) info.ArgumentList.Add(arg);
-            foreach (string arg in new[] { "--vfs-write-back", "2s", "--vfs-cache-max-age", "24h", "--buffer-size", "0", "--dir-cache-time", "30s", "--volname", "TeraBox · LocalDrive", "--rc", "--rc-addr", $"127.0.0.1:{rcPort}", "--config", mountConfigPath }) info.ArgumentList.Add(arg);
+            foreach (string arg in new[] { "--vfs-write-back", "2s", "--vfs-cache-max-age", "24h", "--buffer-size", "0", "--dir-cache-time", "2m", "--volname", "TeraBox · LocalDrive", "--rc", "--rc-addr", $"127.0.0.1:{rcPort}", "--config", mountConfigPath }) info.ArgumentList.Add(arg);
             info.Environment["RCLONE_RC_USER"] = "localdrive"; info.Environment["RCLONE_RC_PASS"] = rcPassword;
             step = "mounting-windows-drive";
             ConnectionDiagnostics.Record(step);
@@ -411,7 +416,14 @@ internal sealed class DriveWindow : Window
     {
         if (checkingTransfers || rc == null || process == null || process.HasExited) return;
         checkingTransfers = true;
-        try { transfers.Text = (await ReadTransfersAsync()).Description; }
+        try
+        {
+            var state = await ReadTransfersAsync();
+            transfers.Text = state.Description;
+            transferTimer.Interval = state.OutOfSpace || state.Errors > 0 ? TimeSpan.FromSeconds(30)
+                : state.Queued > 0 || state.Uploading > 0 ? TimeSpan.FromSeconds(5)
+                : TimeSpan.FromSeconds(60);
+        }
         catch { transfers.Text = "Upload status unavailable. Keep the app open until pending changes can be checked."; }
         finally { checkingTransfers = false; }
     }
@@ -422,6 +434,7 @@ internal sealed class DriveWindow : Window
         e.Cancel = true;
         if (busy) { status.Text = "Wait for the current operation to finish before closing."; return; }
         Hide(); ShowInTaskbar = false;
+        transferTimer.Stop();
         trayIcon.Visible = true;
         trayIcon.Text = process == null ? "LocalDrive — disconnected" : "LocalDrive — TeraBox connected";
         status.Text = "LocalDrive is running in the notification area. Use its menu to reopen or exit.";
