@@ -4,7 +4,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## Current implementation
 
-- Version: `1.3.4`
+- Version: `1.3.5`
 - Implementation commit: `59edc962c821a455c8369c1f3d44bbd87ec5729a`.
 - Checkpoint commit before release: `f5e22b2d3df26d458493a8b414e605860759b162`.
 - Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
@@ -16,6 +16,15 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Updated tagged GitHub releases to build and attach `LocalDrive-Rclone-<version>-win-x64.zip`; setup embeds that release URL and the exact archive SHA-256.
 - Updated installer to checksum-verify the compact archive, stage/swap its executable with rollback on failure, and replace older unmarked full-size engines. Existing TeraBox session and cache are not altered.
 - Bumped the app to `1.3.4`; updated README and third-party notices.
+
+## One-file low-idle package (current work)
+
+- Implementation commit: `9f1baf151834764d1bfc68526831b82bb7b121de`.
+- Bumped app to `1.3.5`. Tagged releases now expose a single `LocalDrive-<version>-Setup-win-x64.exe`; it embeds the app and checksum-verified slim TeraBox engine. Signed .NET Desktop Runtime, WebView2, and WinFsp installers download only when missing.
+- Removed the release setup's dead engine-archive download URL. If the embedded engine is absent or damaged, the installer now reports that the setup should be downloaded again. Source-only builds retain the upstream fallback.
+- Disabled rclone periodic console stats and kept the existing zero read buffer; the app already stops transfer polling while hidden. The mount engine stays resident while T: is mounted.
+- Local package: `LocalDrive-1.3.5-Setup-win-x64.exe`, `8,683,520` bytes (8.28 MiB). Its intermediate setup ZIP is `8,487,329` bytes and includes the `7,993,714`-byte compact engine archive.
+- Verification: .NET publish and IExpress package build succeeded; installer PowerShell parsed; embedded engine digest matched installer pin; package contents checked for app, installer and exactly one engine archive; `git diff --check` passed. Live installation, account sign-in, mount and remote file operations not run.
 
 ## Verification
 
@@ -32,9 +41,12 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 - Published release: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.4
 - GitHub Actions: https://github.com/RaghavSharma006/LocalDrive/actions/runs/40179404245 (success).
+- Published release: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.5
+- GitHub Actions: https://github.com/RaghavSharma006/LocalDrive/actions/runs/40180167303 (success).
+- Release metadata confirms exactly one asset: `LocalDrive-1.3.5-Setup-win-x64.exe`, `8,671,232` bytes (~8.27 MiB).
 - Previous published release: `v1.3.3`, https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3.
 
 ## Remaining work
 
-1. User should install `v1.3.4` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. The installer will replace the older engine after checksum verification.
-2. If a live account test fails, inspect `LocalDrive` connection diagnostics and reproduce with the new engine; do not infer success from packaging/CLI checks alone.
+1. User should install `v1.3.5` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. No live account test is claimed from package validation alone.
+2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
