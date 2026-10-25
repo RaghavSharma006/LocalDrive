@@ -4,12 +4,13 @@ LocalDrive mounts your TeraBox account as a Windows drive letter. Browse and man
 
 ## Download and install
 
-1. Download `LocalDrive-<version>-Setup-win-x64.zip` from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases).
-2. Extract the ZIP and run `Setup-LocalDrive.cmd`.
-3. Accept the Windows prompt if setup needs to install the WinFsp filesystem driver.
-4. Open **LocalDrive** from the Start menu and sign in.
+1. Download and run `LocalDrive-<version>-Setup-win-x64.exe` from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). This single setup file extracts the compact app package, checks the required components, and launches LocalDrive when installation is complete.
+2. Accept the Windows prompt if setup needs to install the WinFsp filesystem driver.
+3. Open **LocalDrive** from the Start menu and sign in.
 
-The ZIP is a compact online installer. It contains the LocalDrive app and setup scripts; setup downloads the pinned TeraBox engine and installs signed Windows runtimes only when missing. An internet connection is needed during setup. The installed app uses the .NET 10 Desktop Runtime, WebView2 Runtime, WinFsp, and the TeraBox engine. Downloads are checksum-verified or signature-verified before use. The full engine still takes disk space after installation; keeping it out of every user's download ZIP makes the package much smaller.
+The `.exe` is a one-click wrapper around the compact ZIP. Both contain only the LocalDrive app and setup scripts; setup downloads the pinned TeraBox engine and installs signed Windows runtimes only when missing. An internet connection is needed during setup. The installed app uses the .NET 10 Desktop Runtime, WebView2 Runtime, WinFsp, and one `rclone.exe` TeraBox engine. Downloads are checksum-verified or signature-verified before use. The full engine still takes disk space after installation; keeping it out of every user's download keeps the initial download small.
+
+The setup EXE is not code-signed, so Windows SmartScreen may show an unknown-publisher warning. The ZIP remains available for users who prefer to inspect and run the setup script directly.
 
 Settings and the encrypted sign-in are kept under `%LOCALAPPDATA%\LocalDrive`.
 
@@ -36,13 +37,13 @@ Directory listings are cached for up to two minutes to reduce repeated cloud loo
 
 ## Build from source
 
-Requirements: Windows x64 and the .NET 10 SDK. The build script creates the same compact online setup archive as the release workflow. Runtime installers and the engine are fetched and verified by setup, not bundled into the ZIP.
+Requirements: Windows x64 and the .NET 10 SDK. The build script creates a compact online setup ZIP and a one-click self-extracting setup executable, matching the release workflow. Runtime installers and the engine are fetched and verified by setup, not bundled into either download.
 
 ```powershell
 ./Build-Standalone.ps1
 ```
 
-The output archive is named `LocalDrive-<version>-Setup-win-x64.zip`. The source repository excludes generated binaries, downloaded runtimes, archives, caches, and logs. Third-party notices and required licenses are included in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
+The outputs are named `LocalDrive-<version>-Setup-win-x64.exe` and `LocalDrive-<version>-Setup-win-x64.zip`. The source repository excludes generated binaries, downloaded runtimes, archives, caches, and logs. Third-party notices and required licenses are included in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
 
 ## Security and support limits
 

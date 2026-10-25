@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'Continue'
 $installRoot = Join-Path $env:LOCALAPPDATA 'Programs\LocalDrive'
 $sourceRoot = (Resolve-Path $PSScriptRoot).Path.TrimEnd('\')
 $installFull = [IO.Path]::GetFullPath($installRoot).TrimEnd('\')
@@ -15,7 +16,8 @@ if (-not $sourceRoot.Equals($installFull, [StringComparison]::OrdinalIgnoreCase)
 $scratch = Join-Path $env:TEMP ('LocalDrive-setup-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $scratch | Out-Null
 function Download-File([string]$url, [string]$destination) {
-    & curl.exe -L --fail --silent --show-error --output $destination $url
+    Write-Host ("Downloading {0}..." -f ([Uri]$url).Segments[-1])
+    & curl.exe -L --fail --show-error --progress-bar --output $destination $url
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $destination)) { throw "Could not download a required signed dependency from $url" }
 }
 function Assert-MicrosoftSignature([string]$path) {
@@ -28,6 +30,7 @@ function Assert-MicrosoftSignature([string]$path) {
 try {
     $winFspLauncher = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'WinFsp\bin\launcher-x64.exe'
     if (-not (Test-Path -LiteralPath $winFspLauncher)) {
+        Write-Host 'WinFsp is missing. Installing the signed filesystem driver; Windows will ask for permission.'
         $msi = Join-Path $scratch 'winfsp-2.1.25156.msi'
         Download-File 'https://github.com/winfsp/winfsp/releases/download/v2.1/winfsp-2.1.25156.msi' $msi
         $actual = (Get-FileHash -LiteralPath $msi -Algorithm SHA256).Hash
@@ -47,6 +50,7 @@ try {
         if ((Test-Path -LiteralPath $root) -and (Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^\d+\.' })) { $hasWebView = $true; break }
     }
     if (-not $hasWebView) {
+        Write-Host 'Installing Microsoft WebView2 Runtime...'
         $bootstrapper = Join-Path $scratch 'MicrosoftEdgeWebView2Setup.exe'
         Download-File 'https://go.microsoft.com/fwlink/p/?LinkId=2124703' $bootstrapper
         Assert-MicrosoftSignature $bootstrapper
@@ -59,6 +63,7 @@ try {
     $hasDesktopRuntime = (Test-Path -LiteralPath $desktopRuntime) -and
         ((Get-ChildItem -LiteralPath $desktopRuntime -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^10\.' }).Count -gt 0)
     if (-not $hasDesktopRuntime) {
+        Write-Host 'Installing .NET 10 Desktop Runtime...'
         $runtimeInstaller = Join-Path $scratch 'windowsdesktop-runtime-10-win-x64.exe'
         Download-File 'https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe' $runtimeInstaller
         Assert-MicrosoftSignature $runtimeInstaller
@@ -68,6 +73,7 @@ try {
 
     $rclone = Join-Path $installFull 'Engine\tools\rclone\rclone.exe'
     if (-not (Test-Path -LiteralPath $rclone)) {
+        Write-Host 'Installing the pinned TeraBox drive engine (one-time download)...'
         $rcloneZip = Join-Path $scratch 'rclone-windows-amd64.zip'
         Download-File 'https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip' $rcloneZip
         $actual = (Get-FileHash -LiteralPath $rcloneZip -Algorithm SHA256).Hash
@@ -93,7 +99,8 @@ try {
     $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LocalDrive'
     New-Item -Path $uninstallKey -Force | Out-Null
     New-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'LocalDrive' -PropertyType String -Force | Out-Null
-    New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '1.3.2' -PropertyType String -Force | Out-Null
+    $appVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $installFull 'LocalDrive.exe')).ProductVersion
+    New-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value $appVersion -PropertyType String -Force | Out-Null
     New-ItemProperty -Path $uninstallKey -Name Publisher -Value 'LocalDrive' -PropertyType String -Force | Out-Null
     New-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installFull -PropertyType String -Force | Out-Null
     New-ItemProperty -Path $uninstallKey -Name DisplayIcon -Value (Join-Path $installFull 'LocalDrive.exe') -PropertyType String -Force | Out-Null

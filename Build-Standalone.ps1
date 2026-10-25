@@ -4,6 +4,7 @@ $publish = [IO.Path]::GetFullPath((Join-Path $projectRoot 'release-online'))
 $projectXml = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'LocalDrive.csproj') -Raw)
 $version = $projectXml.Project.PropertyGroup.Version
 $archive = Join-Path $projectRoot "LocalDrive-$version-Setup-win-x64.zip"
+$setupExe = Join-Path $projectRoot "LocalDrive-$version-Setup-win-x64.exe"
 if (-not $publish.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Refusing to publish outside the project folder.'
 }
@@ -34,3 +35,69 @@ Compress-Archive -Path (Join-Path $publish '*') -DestinationPath $archive -Compr
 $archiveInfo = Get-Item -LiteralPath $archive
 Write-Host ("Compact setup package created: {0} ({1:N2} MB)" -f $archiveInfo.FullName, ($archiveInfo.Length / 1MB))
 Write-Host 'The setup downloads pinned, signature-checked runtime dependencies only when they are needed.'
+
+$iexpress = Join-Path $env:WINDIR 'System32\iexpress.exe'
+if (-not (Test-Path -LiteralPath $iexpress)) { throw 'IExpress is required to build the one-click Windows setup executable.' }
+$stage = Join-Path $env:TEMP ('LocalDrive-iexpress-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $stage | Out-Null
+try {
+    $archiveName = Split-Path -Leaf $archive
+    Copy-Item -LiteralPath $archive -Destination (Join-Path $stage $archiveName)
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'Bootstrap-LocalDrive.ps1') -Destination $stage
+    $sedPath = Join-Path $stage 'LocalDrive.sed'
+    $sed = @"
+[Version]
+Class=IEXPRESS
+SEDVersion=3
+[Options]
+PackagePurpose=InstallApp
+ShowInstallProgramWindow=1
+HideExtractAnimation=0
+UseLongFileName=1
+InsideCompressed=0
+CAB_FixedSize=0
+CAB_ResvCodeSigning=0
+RebootMode=N
+InstallPrompt=%InstallPrompt%
+DisplayLicense=%DisplayLicense%
+FinishMessage=%FinishMessage%
+TargetName=%TargetName%
+FriendlyName=%FriendlyName%
+AppLaunched=%AppLaunched%
+PostInstallCmd=%PostInstallCmd%
+AdminQuietInstCmd=%AdminQuietInstCmd%
+UserQuietInstCmd=%UserQuietInstCmd%
+SourceFiles=SourceFiles
+[Strings]
+InstallPrompt=
+DisplayLicense=
+FinishMessage=
+TargetName=$setupExe
+FriendlyName=LocalDrive Setup
+AppLaunched=powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File Bootstrap-LocalDrive.ps1
+PostInstallCmd=<None>
+AdminQuietInstCmd=
+UserQuietInstCmd=
+FILE0="Bootstrap-LocalDrive.ps1"
+FILE1="$archiveName"
+[SourceFiles]
+SourceFiles0=$stage\
+[SourceFiles0]
+%FILE0%=
+%FILE1%=
+"@
+    Set-Content -LiteralPath $sedPath -Value $sed -Encoding Default
+    if (Test-Path -LiteralPath $setupExe) { Remove-Item -LiteralPath $setupExe -Force }
+    & $env:ComSpec /d /c "$iexpress /N $sedPath"
+    $iexpressExit = $LASTEXITCODE
+    if ($iexpressExit -ne 0 -or -not (Test-Path -LiteralPath $setupExe)) { throw "IExpress did not create the one-click setup executable (exit code $iexpressExit)." }
+    $setupInfo = Get-Item -LiteralPath $setupExe
+    Write-Host ("One-click setup executable created: {0} ({1:N2} MB)" -f $setupInfo.FullName, ($setupInfo.Length / 1MB))
+}
+finally {
+    $stageFull = [IO.Path]::GetFullPath($stage)
+    $tempFull = [IO.Path]::GetFullPath($env:TEMP).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if ($stageFull.StartsWith($tempFull, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $stageFull)) {
+        Remove-Item -LiteralPath $stageFull -Recurse -Force
+    }
+}

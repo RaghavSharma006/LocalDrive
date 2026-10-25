@@ -27,10 +27,13 @@ jobs:
         shell: pwsh
         run: |
           $package = Get-ChildItem -Filter 'LocalDrive-*-Setup-win-x64.zip' | Select-Object -First 1
-          if (-not $package) { throw 'Setup archive was not produced.' }
-          gh release create $env:GITHUB_REF_NAME $package.FullName --title "LocalDrive $env:GITHUB_REF_NAME" --generate-notes
+          $setup = Get-ChildItem -Filter 'LocalDrive-*-Setup-win-x64.exe' | Select-Object -First 1
+          if (-not $package -or -not $setup) { throw 'The setup archive or one-click executable was not produced.' }
+          gh release create $env:GITHUB_REF_NAME $setup.FullName $package.FullName --title "LocalDrive $env:GITHUB_REF_NAME" --generate-notes
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: LocalDrive-Windows-x64
-          path: LocalDrive-*-Setup-win-x64.zip
+          path: |
+            LocalDrive-*-Setup-win-x64.exe
+            LocalDrive-*-Setup-win-x64.zip
