@@ -4,7 +4,7 @@ LocalDrive is a standalone Windows desktop app. It uses an open-source TeraBox b
 
 | Capability | Status |
 | --- | --- |
-| TeraBox sign-in | Embedded WebView2; captures the TeraBox cookie header, verifies a root listing, and stores the session with Windows DPAPI. Personal Chrome cookie import is intentionally absent. |
+| TeraBox sign-in | Embedded WebView2; reads the active TeraBox origin plus supported account domains, requires the session cookie, verifies a root listing, and stores the session with Windows DPAPI. Personal Chrome cookie import is intentionally absent. |
 | Whole-account root | Uses the cookie-authenticated TeraBox backend; not limited to an official API app folder. Provider behavior can change. |
 | Virtual drive | rclone + WinFsp, configurable letter, read/write mount, VFS full cache, executable permissions 0755. |
 | Cache | User-selected writable path and 1–4096 GB cleanup target; changes apply after reconnect. |

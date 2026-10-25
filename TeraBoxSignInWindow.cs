@@ -17,6 +17,13 @@ internal sealed class TeraBoxSignInWindow : Window
     private readonly TextBlock status = new() { Text = "Sign in on TeraBox below. LocalDrive will verify the account before saving it.", Margin = new Thickness(16), TextWrapping = TextWrapping.Wrap };
     private readonly Button connect = new() { Content = "Connect my TeraBox", Margin = new Thickness(16), Padding = new Thickness(16, 10, 16, 10), IsEnabled = false };
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private static readonly string[] CookieOrigins =
+    [
+        "https://www.terabox.com/",
+        "https://terabox.com/",
+        "https://www.1024terabox.com/",
+        "https://1024terabox.com/"
+    ];
     private bool checking, closed;
     private string lastCandidate = "";
     private DateTimeOffset lastAttempt;
@@ -77,11 +84,14 @@ internal sealed class TeraBoxSignInWindow : Window
             { if (explicitClick) status.Text = "Return to the TeraBox page after signing in, then connect again."; return; }
             if (!explicitClick && !uri.AbsolutePath.StartsWith("/main", StringComparison.OrdinalIgnoreCase) && !uri.AbsolutePath.StartsWith("/disk", StringComparison.OrdinalIgnoreCase)) return;
 
-            var cookies = await browser.CoreWebView2.CookieManager.GetCookiesAsync("https://www.terabox.com/");
-            if (!cookies.Any(c => c.Name.Equals("ndus", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(c.Value)))
-            { if (explicitClick) status.Text = "TeraBox has not finished signing you in. Complete sign-in in this window first."; return; }
+            string? cookieHeader = await ReadSessionCookieHeaderAsync(uri);
+            if (string.IsNullOrWhiteSpace(cookieHeader))
+            {
+                ConnectionDiagnostics.Record("terabox-cookie-not-found", "session-cookie-unavailable");
+                if (explicitClick) status.Text = "TeraBox opened, but LocalDrive could not find the account session. Finish sign-in, return to your TeraBox files page, wait a moment, then try again.";
+                return;
+            }
 
-            string cookieHeader = string.Join("; ", cookies.Select(c => c.Name + "=" + c.Value));
             TeraBoxSessionStore.ValidateCookie(cookieHeader);
             string fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(cookieHeader)));
             if (!explicitClick && fingerprint == lastCandidate && DateTimeOffset.UtcNow - lastAttempt < TimeSpan.FromSeconds(30)) return;
@@ -109,8 +119,34 @@ internal sealed class TeraBoxSignInWindow : Window
         finally { checking = false; }
     }
 
+    private async Task<string?> ReadSessionCookieHeaderAsync(Uri currentUri)
+    {
+        var origins = new[] { currentUri.GetLeftPart(UriPartial.Authority) + "/" }
+            .Concat(CookieOrigins)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string origin in origins)
+        {
+            try
+            {
+                var cookies = await browser.CoreWebView2.CookieManager.GetCookiesAsync(origin);
+                var unique = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var cookie in cookies)
+                {
+                    if (!string.IsNullOrWhiteSpace(cookie.Name) && !string.IsNullOrWhiteSpace(cookie.Value))
+                        unique.TryAdd(cookie.Name, cookie.Value);
+                }
+                if (unique.TryGetValue("ndus", out _) && unique.Count > 0)
+                    return string.Join("; ", unique.Select(cookie => cookie.Key + "=" + cookie.Value));
+            }
+            catch (Exception) { /* Try the next supported TeraBox web origin. */ }
+        }
+        return null;
+    }
+
     private static bool IsTeraBox(Uri uri) => uri.Scheme == "https" &&
         (uri.Host.Equals("terabox.com", StringComparison.OrdinalIgnoreCase) ||
          uri.Host.EndsWith(".terabox.com", StringComparison.OrdinalIgnoreCase) ||
+         uri.Host.Equals("1024terabox.com", StringComparison.OrdinalIgnoreCase) ||
          uri.Host.EndsWith(".1024terabox.com", StringComparison.OrdinalIgnoreCase));
 }

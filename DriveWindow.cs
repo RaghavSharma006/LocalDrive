@@ -299,6 +299,8 @@ internal sealed class DriveWindow : Window
             step = "listing-terabox-root";
             using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45)))
                 await TeraBoxSessionVerifier.VerifyAsync(session, timeout.Token);
+            ConnectionDiagnostics.Record("terabox-session-verified");
+            status.Text = "TeraBox sign-in verified. Preparing your drive…";
 
             step = "preparing-local-cache";
             status.Text = "Checking your selected cache folder…";
@@ -365,6 +367,8 @@ internal sealed class DriveWindow : Window
     {
         RcloneCommandException e when e.AuthenticationFailure => "TeraBox rejected the saved sign-in. Sign in again and retry.",
         RcloneCommandException e => "The TeraBox engine returned error " + e.ExitCode + ". The drive was not mounted.",
+        FileNotFoundException => "TeraBox sign-in is saved, but the drive engine is missing. Run Setup-LocalDrive.cmd from the extracted setup folder to finish installation, then open LocalDrive from the Start menu.",
+        IOException e when e.Message == "Filesystem engine exited" => "TeraBox sign-in is valid, but the drive engine exited while mounting. Confirm WinFsp is installed and choose a free drive letter, then reconnect. The connection log records the failed stage without storing cookies.",
         OperationCanceledException => "TeraBox did not finish its account check within 45 seconds. Check your connection, then retry.",
         InvalidOperationException e when e.Message.StartsWith("Choose a cache folder", StringComparison.Ordinal) => e.Message,
         IOException e when e.Message.StartsWith("The selected cache folder", StringComparison.Ordinal) => e.Message,

@@ -16,7 +16,7 @@ Settings and the encrypted sign-in are kept under `%LOCALAPPDATA%\LocalDrive`.
 ## Connect your account
 
 1. Select **Sign in to TeraBox** and finish signing in inside the LocalDrive window.
-2. LocalDrive checks that the session can list your account before it saves the sign-in.
+2. LocalDrive checks the active TeraBox host and supported account domains for the session, then verifies that it can list your account before saving the sign-in.
 3. Choose a free drive letter and select **Connect drive**.
 4. Select **Open drive** or browse to the drive in File Explorer.
 
