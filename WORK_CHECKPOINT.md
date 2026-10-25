@@ -1,31 +1,40 @@
 # LocalDrive checkpoint
 
-Updated 25 October 2026. Current implementation commit: `e707b4bea8b01f2383477ea2726cbfa519d98494`. Repository: https://github.com/RaghavSharma006/LocalDrive (private). No credentials are stored here.
+Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDrive (private). No credentials are stored here.
+
+## Current implementation
+
+- Version: `1.3.4`
+- Implementation commit: `59edc962c821a455c8369c1f3d44bbd87ec5729a` (local `main`, not pushed yet).
+- Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
 
 ## Completed
 
-- Previous v1.3.2 sign-in fix is preserved: cookie capture checks the active and supported TeraBox domains, verifies the account root, and stores the session with Windows DPAPI.
-- Added a one-click, self-extracting setup EXE alongside the compact setup ZIP. The EXE extracts its embedded ZIP and runs the installer. The installer reports dependency/download progress and derives its installed display version from the app binary.
-- Package keeps the large TeraBox engine and WinFsp MSI out of initial downloads. Setup downloads the pinned rclone-extra release, extracts only `rclone.exe`, and installs WinFsp only if missing.
-- Updated README, feature status, GitHub release workflow, and `.gitignore` for both setup assets.
-- Installed official Ghidra 12.1.4 under `D:\Tools\ghidra_12.1.4_PUBLIC\ghidra_12.1.4_PUBLIC`, verified SHA-256 `ddac49f903da9d5bac833e5cc79395098b9c33cfd3279be5f31bd00387d2d4db`, and configured `GHIDRA_INSTALL_DIR`/Java 21 in user environment and the REA MCP section of `%USERPROFILE%\.codex\config.toml`.
-- Removed the downloaded Ghidra ZIP after verified extraction to reclaim about 570 MB. No REA or Ghidra files were added to the project.
+- Added `Build-SlimRclone.ps1`. It clones rclone-extra tag `v1.75.2-extra`, verifies source commit `56bf13885494819bc801302ddf881279bdac7262`, strips unused backend/command registrations and the optional plugin registration, then builds Windows x64 with `CGO_ENABLED=0`, `cmount`, `-trimpath`, and stripped debug data.
+- Engine retains TeraBox, `mount`/Windows `cmount`, `lsjson`, `version`, and built-in help/completion. Setup also includes the rclone MIT license.
+- Updated tagged GitHub releases to build and attach `LocalDrive-Rclone-<version>-win-x64.zip`; setup embeds that release URL and the exact archive SHA-256.
+- Updated installer to checksum-verify the compact archive, stage/swap its executable with rollback on failure, and replace older unmarked full-size engines. Existing TeraBox session and cache are not altered.
+- Bumped the app to `1.3.4`; updated README and third-party notices.
 
 ## Verification
 
-- `Build-Standalone.ps1`: successful .NET publish and packaging; output ZIP is 501,098 bytes and one-click EXE is 606,208 bytes.
-- Extracted the EXE in IExpress extraction-only mode, then expanded the embedded ZIP. Confirmed the app package has no rclone engine or WinFsp MSI and does not retain the SFX bootstrap script.
-- PowerShell parser accepted `Build-Standalone.ps1`, `Install-LocalDrive.ps1`, and `Bootstrap-LocalDrive.ps1`; `git diff --check` passed.
-- Ghidra `analyzeHeadless.bat` starts under the IntelliJ Java 21 runtime and prints usage. The already-running REA MCP process still sees its pre-change environment; native REA analysis has not run yet and needs Codex/REA restart.
-- Full setup/install, TeraBox sign-in/mount, filesystem read/write, and running programs from T: were not executed as part of package verification.
+- Shipped engine before: `84,690,432` bytes. Compact executable: `20,217,344` bytes (~76.1% smaller).
+- Compact engine ZIP: `7,993,714` bytes (7.62 MiB), SHA-256 `AB73534DF3DE2D81685B0253940865DF7F3D9155EBD8166C76503D28FA1A8D02`.
+- Compact executable SHA-256: `052DDDC60BF85B20D836A0631914509B72C3A1EDDC4342D733117F36DC6E9797`.
+- LocalDrive setup ZIP: `501,457` bytes; one-click setup EXE: `606,208` bytes. Both exclude the engine/runtime installers.
+- `Build-SlimRclone.ps1` succeeded and its command smoke checks passed for TeraBox, mount, lsjson, and version. Extracted archive contained only `rclone.exe` and `COPYING`.
+- `Build-Standalone.ps1` completed .NET publish and setup packaging. All PowerShell scripts parsed; generated installer URL and archive digest matched; `git diff --check` passed.
+- REA opened both original and compact native files as x64 Windows PE. Safe artifact inventory of the final compact engine verified a single PE payload of `20,217,344` bytes with the expected SHA. Ghidra full function/string overviews timed out at 300 seconds for both Go binaries; no complete decompilation is claimed.
+- No live TeraBox session, mount/unmount, remote read/write/delete, or executable-from-T: test was run. Those require a Windows user session and authenticated account.
 
 ## Deployment
 
-- Implementation commit `e707b4bea8b01f2383477ea2726cbfa519d98494` and checkpoint commit `c1ef77d84865f1f0febeba29103d2b548924621a` were pushed to `main`; tag `v1.3.3` was pushed.
-- GitHub Actions run `40177341632` completed successfully. Published https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3 with `LocalDrive-1.3.3-Setup-win-x64.exe` (598,016 bytes) and `LocalDrive-1.3.3-Setup-win-x64.zip` (501,326 bytes).
-- The setup EXE is unsigned and may trigger SmartScreen's unknown-publisher warning; the ZIP remains available.
+- Pending push of `59edc962c821a455c8369c1f3d44bbd87ec5729a`, tag `v1.3.4`, and successful GitHub Actions release verification.
+- Previous published release: `v1.3.3`, https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3.
 
 ## Remaining work and exact next steps
 
-1. Restart Codex to reload the REA MCP environment, then run REA against the shipped rclone binary. The WinFsp MSI is a package container and is not directly accepted as a native binary by REA; inventory its installed/runtime payload if analysis is still needed.
-2. If correcting any source after release, build a new patch version and publish it under a new tag; do not replace the existing v1.3.3 release assets silently.
+1. Commit this checkpoint update and push both commits to `origin/main`.
+2. Push tag `v1.3.4` to trigger the existing Windows release workflow.
+3. Verify workflow success and confirm the setup EXE, setup ZIP, and compact rclone ZIP are attached to the release; update this checkpoint with the resulting commit hash and release URL.
+4. If workflow fails, inspect its diagnostics and fix before reporting completion.
