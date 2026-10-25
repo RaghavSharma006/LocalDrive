@@ -60,8 +60,8 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## Remaining work
 
-1. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval. No live account test is claimed from package validation alone.
-2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
+1. User should install `v1.3.7` and confirm a fresh TeraBox sign-in/mount plus read/write operations. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval. No live mount test is claimed from package validation alone.
+2. If connection fails, inspect `%LOCALAPPDATA%\LocalDrive\connection-status.json`; if the engine exits at mount, inspect the sanitized `%LOCALAPPDATA%\LocalDrive\mount-failure.json` and reproduce that specific category.
 
 ## TeraBox connect and mount diagnostics (v1.3.7 released)
 
