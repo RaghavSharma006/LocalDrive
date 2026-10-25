@@ -8,7 +8,7 @@ LocalDrive mounts your TeraBox account as a Windows drive letter. Browse and man
 2. Accept the Windows prompt if setup needs to install the WinFsp filesystem driver.
 3. Open **LocalDrive** from the Start menu and sign in.
 
-The `.exe` is a one-click wrapper around the compact ZIP. Both contain only the LocalDrive app and setup scripts; setup downloads the pinned TeraBox engine and installs signed Windows runtimes only when missing. An internet connection is needed during setup. The installed app uses the .NET 10 Desktop Runtime, WebView2 Runtime, WinFsp, and one `rclone.exe` TeraBox engine. Downloads are checksum-verified or signature-verified before use. The full engine still takes disk space after installation; keeping it out of every user's download keeps the initial download small.
+The `.exe` is a one-click wrapper around the compact ZIP. Both contain only the LocalDrive app and setup scripts; setup downloads a TeraBox-only engine and installs signed Windows runtimes only when missing. The release engine ZIP is about 8 MB and expands to an approximately 20 MB `rclone.exe`; it includes only the TeraBox backend and the mount, `lsjson`, and version commands LocalDrive uses. The archive is pinned to the app release by SHA-256. An internet connection is needed during setup. The installed app also uses the .NET 10 Desktop Runtime, WebView2 Runtime, and WinFsp. The setup EXE and ZIP remain small because they do not contain these runtime components.
 
 The setup EXE is not code-signed, so Windows SmartScreen may show an unknown-publisher warning. The ZIP remains available for users who prefer to inspect and run the setup script directly.
 
@@ -37,7 +37,7 @@ Directory listings are cached for up to two minutes to reduce repeated cloud loo
 
 ## Build from source
 
-Requirements: Windows x64 and the .NET 10 SDK. The build script creates a compact online setup ZIP and a one-click self-extracting setup executable, matching the release workflow. Runtime installers and the engine are fetched and verified by setup, not bundled into either download.
+Requirements: Windows x64 and the .NET 10 SDK. `Build-Standalone.ps1` creates a compact online setup ZIP and a one-click self-extracting setup executable. Tagged release builds also require Git and Go 1.27.0 to create the pinned TeraBox-only engine. The setup package downloads that engine and signed runtime installers, rather than bundling them.
 
 ```powershell
 ./Build-Standalone.ps1

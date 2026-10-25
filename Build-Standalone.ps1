@@ -1,3 +1,9 @@
+param(
+    [string]$RcloneArchivePath,
+    [string]$RcloneArchiveUrl,
+    [string]$RcloneArchiveSha256
+)
+
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path $PSScriptRoot).Path
 $publish = [IO.Path]::GetFullPath((Join-Path $projectRoot 'release-online'))
@@ -27,6 +33,18 @@ foreach ($file in @(
     'Uninstall-LocalDrive.ps1',
     'Setup-LocalDrive.cmd'
 )) { Copy-Item (Join-Path $projectRoot $file) $publish -Force }
+if ($RcloneArchivePath) {
+    if (-not (Test-Path -LiteralPath $RcloneArchivePath -PathType Leaf)) { throw 'The slim rclone archive does not exist.' }
+    if ($RcloneArchiveSha256 -notmatch '^[A-Fa-f0-9]{64}$') { throw 'A valid SHA-256 is required for the slim rclone archive.' }
+    if ($RcloneArchiveUrl -notmatch '^https://') { throw 'The slim rclone archive URL must use HTTPS.' }
+    $archiveDigest = (Get-FileHash -LiteralPath $RcloneArchivePath -Algorithm SHA256).Hash
+    if ($archiveDigest -ne $RcloneArchiveSha256.ToUpperInvariant()) { throw 'The supplied slim rclone archive does not match its SHA-256.' }
+    $installerPath = Join-Path $publish 'Install-LocalDrive.ps1'
+    $installer = Get-Content -LiteralPath $installerPath -Raw
+    $installer = $installer.Replace('https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip', $RcloneArchiveUrl)
+    $installer = $installer.Replace('D5A5D9383A607CCB1AF9A871D4CB92906121F32CF111497ADB94958B99315C69', $RcloneArchiveSha256.ToUpperInvariant())
+    Set-Content -LiteralPath $installerPath -Value $installer -Encoding utf8
+}
 Copy-Item (Join-Path $projectRoot 'licenses\WinFsp-License.txt') $licenses -Force
 Copy-Item (Join-Path $projectRoot 'licenses\rclone-extra-COPYING') $licenses -Force
 

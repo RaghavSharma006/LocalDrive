@@ -71,21 +71,34 @@ try {
         if ($result.ExitCode -notin @(0, 3010)) { throw ".NET Desktop Runtime setup failed (exit code $($result.ExitCode))." }
     }
 
-    $rclone = Join-Path $installFull 'Engine\tools\rclone\rclone.exe'
-    if (-not (Test-Path -LiteralPath $rclone)) {
-        Write-Host 'Installing the pinned TeraBox drive engine (one-time download)...'
+    $engineDirectory = Join-Path $installFull 'Engine\tools\rclone'
+    $rclone = Join-Path $engineDirectory 'rclone.exe'
+    $engineMarker = Join-Path $engineDirectory '.localdrive-engine-sha256'
+    $pinnedEngineHash = 'D5A5D9383A607CCB1AF9A871D4CB92906121F32CF111497ADB94958B99315C69'
+    $pinnedEngineUrl = 'https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip'
+    $installedEngineHash = if (Test-Path -LiteralPath $engineMarker) { (Get-Content -LiteralPath $engineMarker -Raw).Trim() } else { '' }
+    if (-not (Test-Path -LiteralPath $rclone) -or $installedEngineHash -ne $pinnedEngineHash) {
+        Write-Host 'Installing or updating the compact TeraBox drive engine...'
         $rcloneZip = Join-Path $scratch 'rclone-windows-amd64.zip'
-        Download-File 'https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip' $rcloneZip
+        Download-File $pinnedEngineUrl $rcloneZip
         $actual = (Get-FileHash -LiteralPath $rcloneZip -Algorithm SHA256).Hash
-        if ($actual -ne 'D5A5D9383A607CCB1AF9A871D4CB92906121F32CF111497ADB94958B99315C69') { throw 'The TeraBox engine archive checksum did not match its pinned digest.' }
+        if ($actual -ne $pinnedEngineHash) { throw 'The TeraBox engine archive checksum did not match its pinned digest.' }
         $extract = Join-Path $scratch 'rclone'
         Expand-Archive -LiteralPath $rcloneZip -DestinationPath $extract -Force
-        $engine = Join-Path $installFull 'Engine\tools\rclone'
-        New-Item -ItemType Directory -Force -Path $engine | Out-Null
+        New-Item -ItemType Directory -Force -Path $engineDirectory | Out-Null
         $engineBinary = Get-ChildItem -LiteralPath $extract -Filter 'rclone.exe' -File -Recurse | Select-Object -First 1
         if (-not $engineBinary) { throw 'The verified TeraBox engine archive did not contain rclone.exe.' }
-        Copy-Item -LiteralPath $engineBinary.FullName -Destination $rclone
-        Copy-Item -LiteralPath (Join-Path $installFull 'licenses\rclone-extra-COPYING') -Destination (Join-Path $engine 'COPYING') -Force
+        $newBinary = Join-Path $engineDirectory 'rclone.exe.new'
+        $backupBinary = Join-Path $scratch 'rclone.exe.previous'
+        Copy-Item -LiteralPath $engineBinary.FullName -Destination $newBinary -Force
+        if (Test-Path -LiteralPath $rclone) { Move-Item -LiteralPath $rclone -Destination $backupBinary -Force }
+        try { Move-Item -LiteralPath $newBinary -Destination $rclone -Force }
+        catch {
+            if (Test-Path -LiteralPath $backupBinary) { Move-Item -LiteralPath $backupBinary -Destination $rclone -Force }
+            throw
+        }
+        Copy-Item -LiteralPath (Join-Path $installFull 'licenses\rclone-extra-COPYING') -Destination (Join-Path $engineDirectory 'COPYING') -Force
+        Set-Content -LiteralPath $engineMarker -Value $pinnedEngineHash -Encoding ascii
     }
 
     $startMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'LocalDrive.lnk'

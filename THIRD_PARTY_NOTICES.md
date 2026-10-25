@@ -1,13 +1,13 @@
 # Third-party components
 
-The online setup downloads these runtime components only when required and verifies them before installation. The compact ZIP does not bundle the engine or platform runtimes.
+The online setup downloads these runtime components only when required and verifies them before installation. The compact setup ZIP does not bundle the engine or platform runtimes.
 
 ## rclone-extra
 
 - Version: `v1.75.2-extra`
 - Source and release: https://github.com/gulp79/rclone-extra
-- Windows asset: `rclone-windows-amd64.zip`
-- SHA-256: `D5A5D9383A607CCB1AF9A871D4CB92906121F32CF111497ADB94958B99315C69`
+- Source revision: `56bf13885494819bc801302ddf881279bdac7262`
+- LocalDrive builds a Windows x64 engine with only the TeraBox backend and the `mount`, `lsjson`, and `version` commands. The release engine archive's SHA-256 is embedded in that release's installer.
 - License: MIT; see [`licenses/rclone-extra-COPYING`](licenses/rclone-extra-COPYING).
 - The TeraBox backend is an unofficial beta integration. It authenticates with the user's browser session cookie; TeraBox may change the service without notice.
 
@@ -34,4 +34,4 @@ The online setup downloads these runtime components only when required and verif
 
 ## .NET
 
-The setup archive is published self-contained for Windows x64 using the .NET 10 runtime. Microsoft .NET runtime components are MIT licensed.
+The desktop app targets Windows x64 and uses Microsoft's .NET 10 Desktop Runtime. Setup downloads and validates the runtime installer if the required runtime is not installed. Microsoft .NET runtime components are MIT licensed.
