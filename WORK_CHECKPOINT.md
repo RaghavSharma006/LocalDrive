@@ -4,9 +4,9 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## Current implementation
 
-- Version: `1.3.6`
-- Implementation commit: `a3b1fac7e85736d1d18471e6b81ca27cf9c92d21`.
-- Checkpoint commit before release: `f5e22b2d3df26d458493a8b414e605860759b162`.
+- Version: `1.3.7`
+- Implementation commit: `bb76963cd1341e6cc7498b05178f310e5df3b053`.
+- Checkpoint commit before release: `244bd2fa2f9c9f3175bad27e158386caddc4e796`.
 - Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
 
 ## Completed
@@ -63,7 +63,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 1. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval. No live account test is claimed from package validation alone.
 2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
 
-## TeraBox connect and mount diagnostics (v1.3.7 in progress)
+## TeraBox connect and mount diagnostics (v1.3.7 released)
 
 - Implementation commit: `bb76963cd1341e6cc7498b05178f310e5df3b053`.
 - After in-app sign-in has verified the session, the app now reuses that verified session for the immediate mount instead of issuing a duplicate TeraBox root-list request. Reconnect/startup still verifies a stored session once.
@@ -71,5 +71,5 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Account-check errors now distinguish session rejection, HTTP 403, throttling and network failure without saving raw stderr. The UI no longer tells users to install WinFsp for every engine exit.
 - Verification: .NET 10.0.402 publish succeeded; `--verify-file-ops` exited 0; `git diff --check` passed.
 - Live account check was intermittent: `--diagnose-connection` passed once, but an immediate UI auto-connect attempt failed at `listing-terabox-root` with the sanitized `terabox-session-rejected` category. No rclone mount process started, no drive was mounted, and no live read/write/mount regression test is claimed. This establishes a current provider-session failure before WinFsp, while the supplied screenshot captures a separate earlier mount-stage failure.
-- Deployment: not yet published. Target release: `v1.3.7`, using the existing GitHub Actions release workflow.
-- Remaining: update this checkpoint after deployment, push the source/checkpoint commits and tag `v1.3.7`, verify the release workflow and single-EXE asset, then user confirms a fresh sign-in and live mount. If the mount engine exits, inspect the sanitized `mount-failure.json` category.
+- Deployment: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.7. GitHub Actions run `40182767493` completed successfully. Release has exactly one asset: `LocalDrive-1.3.7-Setup-win-x64.exe` (10,076,160 bytes).
+- Remaining: user validates a fresh sign-in and live mount. My live saved-session checks were intermittent and did not reach WinFsp. If the mount engine exits, inspect the sanitized `mount-failure.json` category and continue from that specific failure.
