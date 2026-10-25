@@ -53,11 +53,12 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Published release: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.5
 - GitHub Actions: https://github.com/RaghavSharma006/LocalDrive/actions/runs/40180167303 (success).
 - Release metadata confirms exactly one asset: `LocalDrive-1.3.5-Setup-win-x64.exe`, `8,671,232` bytes (~8.27 MiB).
-- `v1.3.6` code is committed locally; push and release workflow verification are pending.
+- Published release: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.6
+- GitHub Actions: https://github.com/RaghavSharma006/LocalDrive/actions/runs/40181675054 (success).
+- Release metadata confirms exactly one asset: `LocalDrive-1.3.6-Setup-win-x64.exe`, `10,076,160` bytes (~9.61 MiB).
 - Previous published release: `v1.3.3`, https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.3.
 
 ## Remaining work
 
-1. Push commit `a3b1fac7e85736d1d18471e6b81ca27cf9c92d21` to `main`, create and push tag `v1.3.6`, then verify GitHub Actions and that the release contains one EXE asset.
-2. Update this checkpoint with the final release URL, workflow status and asset size, then commit and push the checkpoint.
-3. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. No live account test is claimed from package validation alone.
+1. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval. No live account test is claimed from package validation alone.
+2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
