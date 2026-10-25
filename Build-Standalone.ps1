@@ -1,6 +1,7 @@
 param(
     [string]$RcloneArchivePath,
-    [string]$RcloneArchiveSha256
+    [string]$RcloneArchiveSha256,
+    [string]$WinFspMsiPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,6 +45,14 @@ if ($RcloneArchivePath) {
     Set-Content -LiteralPath $installerPath -Value $installer -Encoding utf8
     Copy-Item -LiteralPath $RcloneArchivePath -Destination $publish
 }
+if ($WinFspMsiPath) {
+    if (-not (Test-Path -LiteralPath $WinFspMsiPath -PathType Leaf)) { throw 'The WinFsp installer was not found.' }
+    $winFspHash = (Get-FileHash -LiteralPath $WinFspMsiPath -Algorithm SHA256).Hash
+    if ($winFspHash -ne '073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A') { throw 'The WinFsp installer checksum did not match the pinned official release.' }
+    $winFspSignature = Get-AuthenticodeSignature -LiteralPath $WinFspMsiPath
+    if ($winFspSignature.Status -ne 'Valid' -or $winFspSignature.SignerCertificate.Subject -notmatch 'NAVIMATICS LLC') { throw 'The WinFsp installer signature is not valid.' }
+    Copy-Item -LiteralPath $WinFspMsiPath -Destination (Join-Path $publish 'winfsp-2.1.25156.msi')
+}
 Copy-Item (Join-Path $projectRoot 'licenses\WinFsp-License.txt') $licenses -Force
 Copy-Item (Join-Path $projectRoot 'licenses\rclone-extra-COPYING') $licenses -Force
 
@@ -51,7 +60,7 @@ if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force 
 Compress-Archive -Path (Join-Path $publish '*') -DestinationPath $archive -CompressionLevel Optimal
 $archiveInfo = Get-Item -LiteralPath $archive
 Write-Host ("Compact setup package created: {0} ({1:N2} MB)" -f $archiveInfo.FullName, ($archiveInfo.Length / 1MB))
-Write-Host 'The one-file setup embeds the compact TeraBox engine. Missing signed Windows runtimes download during setup.'
+Write-Host 'The one-file setup embeds the compact TeraBox engine and, when supplied, the signed WinFsp installer. Missing Microsoft runtimes download during setup.'
 
 $iexpress = Join-Path $env:WINDIR 'System32\iexpress.exe'
 if (-not (Test-Path -LiteralPath $iexpress)) { throw 'IExpress is required to build the one-click Windows setup executable.' }

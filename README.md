@@ -8,7 +8,7 @@ LocalDrive mounts your TeraBox account as a Windows drive letter. Browse and man
 2. Approve Windows prompts if setup needs to install the WinFsp driver or .NET Desktop Runtime.
 3. Sign in to TeraBox from LocalDrive.
 
-The release contains one downloadable EXE. It embeds LocalDrive and the compact, checksum-verified TeraBox engine; setup downloads signed .NET, WebView2, and WinFsp components only when they are missing. An internet connection is required during setup, and Windows may request permission to install system components. The engine is about 20 MB after extraction.
+The release contains one downloadable EXE. It embeds LocalDrive, the compact checksum-verified TeraBox engine, and WinFsp's unmodified signed installer. Setup verifies and installs WinFsp from the bundle when the driver is missing; it downloads signed .NET and WebView2 components only when needed. Internet is required during setup if those Microsoft runtimes are missing, and Windows may request permission to install WinFsp or .NET. The engine is about 20 MB after extraction.
 
 The setup EXE is not code-signed, so Windows SmartScreen may show an unknown-publisher warning.
 

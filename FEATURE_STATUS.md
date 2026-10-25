@@ -10,7 +10,7 @@ LocalDrive is a standalone Windows desktop app. It uses an open-source TeraBox b
 | Cache | User-selected writable path and 1–4096 GB cleanup target; changes apply after reconnect. |
 | Background operation | Notification-area tray, close-to-tray, saved-session reconnect, controlled disconnect that checks VFS pending uploads. UI transfer polling stops while the window is hidden; while visible it polls once a minute when idle and more often during uploads. |
 | Appearance | Light and dark themes. |
-| Git-ready bundle | One downloadable self-extracting setup EXE embeds the app and compact TeraBox engine. Setup fetches signed .NET, WebView2, and WinFsp prerequisites only when missing. Engine checksum and installer signatures are verified before install. GitHub Actions publishes the EXE on `v*` tags. The unsigned EXE may trigger a Windows SmartScreen warning. |
+| Git-ready bundle | One downloadable self-extracting setup EXE embeds the app, compact TeraBox engine, and official signed WinFsp installer. Setup fetches signed .NET and WebView2 prerequisites only when missing. Engine checksum, WinFsp checksum/signature, and Microsoft installer signatures are verified before install. GitHub Actions publishes the EXE on `v*` tags. The unsigned EXE may trigger a Windows SmartScreen warning. |
 | Limitations | TeraBox cookies expire and the backend is unofficial beta. Google login may refuse an embedded browser; use TeraBox QR/email when offered. |
 
 The compact backend and one-file installer have been built locally. A clean installation, live TeraBox sign-in, and read/write transfer still require verification in a Windows user session with the account available.

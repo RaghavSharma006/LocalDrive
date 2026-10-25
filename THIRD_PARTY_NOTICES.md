@@ -1,6 +1,6 @@
 # Third-party components
 
-The single-file setup embeds the compact TeraBox engine. It downloads signed Windows runtimes only when required and verifies them before installation.
+The single-file setup embeds the compact TeraBox engine and the unmodified, signed WinFsp installer. It downloads signed Microsoft runtimes only when required and verifies them before installation.
 
 ## rclone-extra
 
@@ -18,6 +18,7 @@ The single-file setup embeds the compact TeraBox engine. It downloads signed Win
 - Installer: `winfsp-2.1.25156.msi`
 - SHA-256: `073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A`
 - License: GPLv3 with the FLOSS exception; see [`licenses/WinFsp-License.txt`](licenses/WinFsp-License.txt).
+- The release build embeds the official unmodified installer and verifies its SHA-256 and Authenticode publisher before installation.
 
 ## Microsoft .NET Desktop Runtime
 
