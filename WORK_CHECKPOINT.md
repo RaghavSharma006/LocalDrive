@@ -62,3 +62,14 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 1. User should install `v1.3.6` and confirm TeraBox sign-in/mount plus read/write operations in their Windows session. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval. No live account test is claimed from package validation alone.
 2. If account connection, a mount, or file operations fail, inspect LocalDrive connection diagnostics on that Windows session and reproduce the specific failure.
+
+## TeraBox connect and mount diagnostics (v1.3.7 in progress)
+
+- Implementation commit: `bb76963cd1341e6cc7498b05178f310e5df3b053`.
+- After in-app sign-in has verified the session, the app now reuses that verified session for the immediate mount instead of issuing a duplicate TeraBox root-list request. Reconnect/startup still verifies a stored session once.
+- Mount stderr is buffered only in memory and reduced to a fixed safe category. If the rclone process exits during mount, `mount-failure.json` records the exit code, drive letter, safe category, permissions/cache mode and WinFsp launcher presence. Raw provider output, cookies, URLs and remote names are not written.
+- Account-check errors now distinguish session rejection, HTTP 403, throttling and network failure without saving raw stderr. The UI no longer tells users to install WinFsp for every engine exit.
+- Verification: .NET 10.0.402 publish succeeded; `--verify-file-ops` exited 0; `git diff --check` passed.
+- Live account check was intermittent: `--diagnose-connection` passed once, but an immediate UI auto-connect attempt failed at `listing-terabox-root` with the sanitized `terabox-session-rejected` category. No rclone mount process started, no drive was mounted, and no live read/write/mount regression test is claimed. This establishes a current provider-session failure before WinFsp, while the supplied screenshot captures a separate earlier mount-stage failure.
+- Deployment: not yet published. Target release: `v1.3.7`, using the existing GitHub Actions release workflow.
+- Remaining: update this checkpoint after deployment, push the source/checkpoint commits and tag `v1.3.7`, verify the release workflow and single-EXE asset, then user confirms a fresh sign-in and live mount. If the mount engine exits, inspect the sanitized `mount-failure.json` category.
