@@ -1,0 +1,12 @@
+bin/
+obj/
+publish/
+release-*/
+*.zip
+*.log
+*.user
+*.suo
+.vs/
+vendor/downloads/
+vendor/
+chrome-extension/
