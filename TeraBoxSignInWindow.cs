@@ -109,10 +109,15 @@ internal sealed class TeraBoxSignInWindow : Window
         }
         catch (RcloneCommandException e)
         {
-            if (!closed) status.Text = e.AuthenticationFailure
-                ? "TeraBox did not accept this sign-in yet. Finish signing in or use the QR/email option, then retry."
-                : "TeraBox connection check failed (engine code " + e.ExitCode + "). Wait a moment and retry.";
-            ConnectionDiagnostics.Record("terabox-login-check-failed", e.AuthenticationFailure ? "auth-rejected" : "rclone-exit-" + e.ExitCode);
+            if (!closed) status.Text = e.DiagnosticCategory switch
+            {
+                "terabox-session-rejected" => "TeraBox rejected this browser session. Finish sign-in, return to your files, then retry.",
+                "terabox-forbidden" => "The browser sign-in completed, but TeraBox denied account access (HTTP 403). Try signing out and back in; if it repeats, TeraBox may be restricting this unofficial connection.",
+                "terabox-throttled" => "TeraBox is temporarily limiting account checks. Wait a few minutes, then retry.",
+                "terabox-network-error" => "TeraBox could not be reached. Check your connection and retry.",
+                _ => "TeraBox connection check failed (engine code " + e.ExitCode + "). Wait a moment and retry."
+            };
+            ConnectionDiagnostics.Record("terabox-login-check-failed", e.DiagnosticCategory + "-exit-" + e.ExitCode);
         }
         catch (OperationCanceledException) { if (!closed) status.Text = "TeraBox took too long to answer. Check your connection and retry."; }
         catch (Exception e) { if (!closed && explicitClick) status.Text = "Could not complete sign-in (" + e.GetType().Name + "). Wait for the page to finish and retry."; }

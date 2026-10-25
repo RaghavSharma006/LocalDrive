@@ -44,6 +44,8 @@ internal sealed class DriveWindow : Window
     private string? drive;
     private bool busy, closing;
     private bool darkTheme;
+    private readonly object engineOutputLock = new();
+    private readonly Queue<string> engineStderr = new();
     private readonly System.Windows.Forms.NotifyIcon trayIcon = new() { Text = "LocalDrive", Icon = System.Drawing.SystemIcons.Application };
     private readonly TeraBoxSessionStore store = new(Path.Combine(Program.Home, "terabox.session.dpapi"));
     private readonly string mountConfigPath = Path.Combine(Program.Home, "rclone-mount.conf");
@@ -260,7 +262,7 @@ internal sealed class DriveWindow : Window
     private async Task SignInAsync()
     {
         State(true);
-        bool signedIn = false;
+        TeraBoxSession? signedInSession = null;
         try
         {
             var window = new TeraBoxSignInWindow { Owner = this };
@@ -268,13 +270,13 @@ internal sealed class DriveWindow : Window
             if (session != null)
             {
                 store.Save(session);
-                signedIn = true;
+                signedInSession = session;
                 status.Text = "Signed in. Checking your account…";
             }
         }
         catch (Exception e) { status.Text = "Sign-in could not finish (" + e.GetType().Name + "). Retry Sign in to TeraBox."; }
         finally { State(false); }
-        if (signedIn) await ConnectAsync();
+        if (signedInSession != null) await ConnectAsync(signedInSession);
     }
 
     private static int FreePort()
@@ -282,23 +284,28 @@ internal sealed class DriveWindow : Window
         var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); int port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop(); return port;
     }
 
-    private async Task ConnectAsync()
+    private async Task ConnectAsync(TeraBoxSession? alreadyVerifiedSession = null)
     {
         State(true);
         string step = "checking-local-engine";
+        int? mountExitCode = null;
+        string? mountFailureCategory = null;
         try
         {
             string rclone = Path.Combine(Program.Engine, "tools", "rclone", "rclone.exe");
             if (!File.Exists(rclone)) throw new FileNotFoundException("Bundled TeraBox engine missing");
             if (letters.SelectedItem is not string selected) { status.Text = "No free drive letter is available."; return; }
-            var session = store.Load();
+            var session = alreadyVerifiedSession ?? store.Load();
             if (session == null) { status.Text = "Sign in to TeraBox first. The app will check the account and connect automatically after sign-in."; return; }
             if (DriveInfo.GetDrives().Any(d => d.Name.StartsWith(selected, StringComparison.OrdinalIgnoreCase))) { RefreshLetters(); status.Text = "That drive letter is now in use. Choose another."; return; }
-            status.Text = "Checking your sign-in and whole-account folder access…";
-            ConnectionDiagnostics.Record("checking-terabox-session");
-            step = "listing-terabox-root";
-            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45)))
+            if (alreadyVerifiedSession == null)
+            {
+                status.Text = "Checking your sign-in and whole-account folder access…";
+                ConnectionDiagnostics.Record("checking-terabox-session");
+                step = "listing-terabox-root";
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
                 await TeraBoxSessionVerifier.VerifyAsync(session, timeout.Token);
+            }
             ConnectionDiagnostics.Record("terabox-session-verified");
             status.Text = "TeraBox sign-in verified. Preparing your drive…";
 
@@ -319,8 +326,17 @@ internal sealed class DriveWindow : Window
             step = "mounting-windows-drive";
             ConnectionDiagnostics.Record(step);
             process = Process.Start(info) ?? throw new IOException("Could not start filesystem engine");
-            // Drain output without persisting potentially sensitive provider URLs or request details.
-            process.OutputDataReceived += (_, _) => { }; process.ErrorDataReceived += (_, _) => { };
+            lock (engineOutputLock) engineStderr.Clear();
+            process.OutputDataReceived += (_, _) => { };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is null) return;
+                lock (engineOutputLock)
+                {
+                    if (engineStderr.Count == 24) engineStderr.Dequeue();
+                    engineStderr.Enqueue(e.Data);
+                }
+            };
             process.BeginOutputReadLine(); process.BeginErrorReadLine();
             MountDiagnostics.RecordMount(selected, process.Id, cacheDirectory, cacheSizeGb);
             status.Text = "Mounting drive…";
@@ -328,7 +344,16 @@ internal sealed class DriveWindow : Window
             bool ready = false;
             for (int i = 0; i < 40; i++)
             {
-                if (process.HasExited) throw new IOException("Filesystem engine exited");
+                if (process.HasExited)
+                {
+                    process.WaitForExit(); // Complete asynchronous stderr delivery before classifying.
+                    mountExitCode = process.ExitCode;
+                    string stderr;
+                    lock (engineOutputLock) stderr = string.Join("\n", engineStderr);
+                    mountFailureCategory = MountDiagnostics.ClassifyEngineFailure(stderr);
+                    MountDiagnostics.RecordFailure(selected, mountExitCode.Value, mountFailureCategory);
+                    throw new IOException("Filesystem engine exited");
+                }
                 if (Directory.Exists(selected + "\\"))
                 {
                     try { using var response = await rc.PostAsJsonAsync("core/version", new { }); ready = response.IsSuccessStatusCode; } catch (HttpRequestException) { }
@@ -351,30 +376,44 @@ internal sealed class DriveWindow : Window
         {
             string errorKind = e switch
             {
-                RcloneCommandException command => command.AuthenticationFailure ? "auth-rejected" : "rclone-exit-" + command.ExitCode,
+                RcloneCommandException command => command.DiagnosticCategory + "-exit-" + command.ExitCode,
+                _ when mountExitCode.HasValue => "mount-exit-" + mountExitCode.Value + ":" + mountFailureCategory,
                 _ => e.GetType().Name
             };
             ConnectionDiagnostics.Record("connection-failed", errorKind, step);
             try { await CleanupAsync(); }
             catch { status.Text = "The engine is still running. Close open drive files, then use Disconnect."; return; }
-            status.Text = ConnectionError(e) + " Step: " + step + ".";
+            status.Text = ConnectionError(e, mountFailureCategory) + " Step: " + step + ".";
             trayIcon.Text = "LocalDrive — disconnected";
         }
         finally { State(false); }
     }
 
-    private static string ConnectionError(Exception error) => error switch
+    private static string ConnectionError(Exception error, string? mountFailureCategory = null) => error switch
     {
-        RcloneCommandException e when e.AuthenticationFailure => "TeraBox rejected the saved sign-in. Sign in again and retry.",
+        RcloneCommandException e when e.DiagnosticCategory == "terabox-session-rejected" => "TeraBox rejected the saved session while checking your account. Sign in again, then reconnect.",
+        RcloneCommandException e when e.DiagnosticCategory == "terabox-forbidden" => "The TeraBox web sign-in is saved, but TeraBox denied the account-list request (HTTP 403). This is a provider/session restriction, not a WinFsp mount failure. Sign in again and retry.",
+        RcloneCommandException e when e.DiagnosticCategory == "terabox-throttled" => "TeraBox temporarily limited the account check. Wait a few minutes, then reconnect.",
+        RcloneCommandException e when e.DiagnosticCategory == "terabox-network-error" => "The TeraBox account check timed out or could not reach the service. Check your connection and retry.",
         RcloneCommandException e => "The TeraBox engine returned error " + e.ExitCode + ". The drive was not mounted.",
         FileNotFoundException => "TeraBox sign-in is saved, but the drive engine is missing. Run Setup-LocalDrive.cmd from the extracted setup folder to finish installation, then open LocalDrive from the Start menu.",
-        IOException e when e.Message == "Filesystem engine exited" => "TeraBox sign-in is valid, but the drive engine exited while mounting. Confirm WinFsp is installed and choose a free drive letter, then reconnect. The connection log records the failed stage without storing cookies.",
+        IOException e when e.Message == "Filesystem engine exited" => MountFailureMessage(mountFailureCategory),
         OperationCanceledException => "TeraBox did not finish its account check within 45 seconds. Check your connection, then retry.",
         InvalidOperationException e when e.Message.StartsWith("Choose a cache folder", StringComparison.Ordinal) => e.Message,
         IOException e when e.Message.StartsWith("The selected cache folder", StringComparison.Ordinal) => e.Message,
         HttpRequestException => "Could not reach the local drive-control endpoint. Reconnect and retry.",
         TimeoutException => "The drive did not become ready. Confirm WinFsp is installed and choose an unused drive letter.",
         _ => "Could not connect (" + error.GetType().Name + "). No drive was mounted. Retry Connect drive; the failed step below identifies where to investigate."
+    };
+
+    private static string MountFailureMessage(string? category) => category switch
+    {
+        "winfsp-unavailable" => "TeraBox sign-in is valid, but WinFsp did not accept the mount. The bundled driver or launcher is unavailable; run LocalDrive setup again, then restart Windows if it installs a driver.",
+        "drive-letter-in-use" => "TeraBox sign-in is valid, but Windows rejected the selected drive letter as already in use. Choose another free letter and reconnect.",
+        "mount-access-denied" => "TeraBox sign-in is valid, but Windows denied the mount request. Check the WinFsp service/driver state and retry LocalDrive without changing Windows security settings.",
+        "invalid-mount-options" => "TeraBox sign-in is valid, but the drive engine rejected its mount options. The failure details are in the LocalDrive connection diagnostics.",
+        "mount-transport-error" => "TeraBox sign-in is valid, but the drive engine failed during mount setup. Check the network and retry; the connection diagnostics contain a safe error category.",
+        _ => "TeraBox sign-in is valid, but the drive engine exited while mounting. Its exit code and a redacted failure category were saved in LocalDrive connection diagnostics."
     };
 
     private async Task DisconnectAsync()

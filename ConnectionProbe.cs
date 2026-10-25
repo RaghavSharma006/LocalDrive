@@ -19,7 +19,7 @@ internal static class ConnectionProbe
         }
         catch (RcloneCommandException e)
         {
-            Console.WriteLine(e.AuthenticationFailure ? "TeraBox rejected the saved sign-in" : "TeraBox listing failed (rclone exit " + e.ExitCode + ")");
+            Console.WriteLine("TeraBox account check failed: " + e.DiagnosticCategory + " (engine exit " + e.ExitCode + ")");
             return 1;
         }
         catch (Exception e)
