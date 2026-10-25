@@ -1,6 +1,5 @@
 param(
     [string]$RcloneArchivePath,
-    [string]$RcloneArchiveUrl,
     [string]$RcloneArchiveSha256
 )
 
@@ -36,14 +35,14 @@ foreach ($file in @(
 if ($RcloneArchivePath) {
     if (-not (Test-Path -LiteralPath $RcloneArchivePath -PathType Leaf)) { throw 'The slim rclone archive does not exist.' }
     if ($RcloneArchiveSha256 -notmatch '^[A-Fa-f0-9]{64}$') { throw 'A valid SHA-256 is required for the slim rclone archive.' }
-    if ($RcloneArchiveUrl -notmatch '^https://') { throw 'The slim rclone archive URL must use HTTPS.' }
     $archiveDigest = (Get-FileHash -LiteralPath $RcloneArchivePath -Algorithm SHA256).Hash
     if ($archiveDigest -ne $RcloneArchiveSha256.ToUpperInvariant()) { throw 'The supplied slim rclone archive does not match its SHA-256.' }
     $installerPath = Join-Path $publish 'Install-LocalDrive.ps1'
     $installer = Get-Content -LiteralPath $installerPath -Raw
-    $installer = $installer.Replace('https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip', $RcloneArchiveUrl)
+    $installer = $installer.Replace("`$pinnedEngineUrl = 'https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip'", "`$pinnedEngineUrl = ''")
     $installer = $installer.Replace('D5A5D9383A607CCB1AF9A871D4CB92906121F32CF111497ADB94958B99315C69', $RcloneArchiveSha256.ToUpperInvariant())
     Set-Content -LiteralPath $installerPath -Value $installer -Encoding utf8
+    Copy-Item -LiteralPath $RcloneArchivePath -Destination $publish
 }
 Copy-Item (Join-Path $projectRoot 'licenses\WinFsp-License.txt') $licenses -Force
 Copy-Item (Join-Path $projectRoot 'licenses\rclone-extra-COPYING') $licenses -Force
@@ -52,7 +51,7 @@ if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force 
 Compress-Archive -Path (Join-Path $publish '*') -DestinationPath $archive -CompressionLevel Optimal
 $archiveInfo = Get-Item -LiteralPath $archive
 Write-Host ("Compact setup package created: {0} ({1:N2} MB)" -f $archiveInfo.FullName, ($archiveInfo.Length / 1MB))
-Write-Host 'The setup downloads pinned, signature-checked runtime dependencies only when they are needed.'
+Write-Host 'The one-file setup embeds the compact TeraBox engine. Missing signed Windows runtimes download during setup.'
 
 $iexpress = Join-Path $env:WINDIR 'System32\iexpress.exe'
 if (-not (Test-Path -LiteralPath $iexpress)) { throw 'IExpress is required to build the one-click Windows setup executable.' }

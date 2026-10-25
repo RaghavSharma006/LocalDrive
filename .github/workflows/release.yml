@@ -30,8 +30,7 @@ jobs:
           $version = $project.Project.PropertyGroup.Version
           $engine = Join-Path $env:RUNNER_TEMP "LocalDrive-Rclone-$version-win-x64.zip"
           $sha256 = ./Build-SlimRclone.ps1 -OutputPath $engine
-          $downloadUrl = "https://github.com/RaghavSharma006/LocalDrive/releases/download/v$version/LocalDrive-Rclone-$version-win-x64.zip"
-          ./Build-Standalone.ps1 -RcloneArchivePath $engine -RcloneArchiveUrl $downloadUrl -RcloneArchiveSha256 $sha256
+          ./Build-Standalone.ps1 -RcloneArchivePath $engine -RcloneArchiveSha256 $sha256
       - name: Build and package
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         shell: pwsh
@@ -42,16 +41,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $package = Get-ChildItem -Filter 'LocalDrive-*-Setup-win-x64.zip' | Select-Object -First 1
           $setup = Get-ChildItem -Filter 'LocalDrive-*-Setup-win-x64.exe' | Select-Object -First 1
-          $engine = Get-ChildItem -Path $env:RUNNER_TEMP -Filter 'LocalDrive-Rclone-*-win-x64.zip' | Select-Object -First 1
-          if (-not $package -or -not $setup -or -not $engine) { throw 'The setup archive, one-click executable, or compact engine was not produced.' }
-          gh release create $env:GITHUB_REF_NAME $setup.FullName $package.FullName $engine.FullName --title "LocalDrive $env:GITHUB_REF_NAME" --generate-notes
+          if (-not $setup) { throw 'The one-file setup executable was not produced.' }
+          gh release create $env:GITHUB_REF_NAME $setup.FullName --title "LocalDrive $env:GITHUB_REF_NAME" --generate-notes
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: LocalDrive-Windows-x64
           path: |
             LocalDrive-*-Setup-win-x64.exe
-            LocalDrive-*-Setup-win-x64.zip
-            ${{ runner.temp }}\LocalDrive-Rclone-*-win-x64.zip

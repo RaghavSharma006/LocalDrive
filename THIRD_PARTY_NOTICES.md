@@ -1,13 +1,13 @@
 # Third-party components
 
-The online setup downloads these runtime components only when required and verifies them before installation. The compact setup ZIP does not bundle the engine or platform runtimes.
+The single-file setup embeds the compact TeraBox engine. It downloads signed Windows runtimes only when required and verifies them before installation.
 
 ## rclone-extra
 
 - Version: `v1.75.2-extra`
 - Source and release: https://github.com/gulp79/rclone-extra
 - Source revision: `56bf13885494819bc801302ddf881279bdac7262`
-- LocalDrive builds a Windows x64 engine with only the TeraBox backend and the `mount`, `lsjson`, and `version` commands. The release engine archive's SHA-256 is embedded in that release's installer.
+- LocalDrive builds a Windows x64 engine with only the TeraBox backend and the `mount`, `lsjson`, and `version` commands. Its SHA-256 is embedded in and verified by the release setup.
 - License: MIT; see [`licenses/rclone-extra-COPYING`](licenses/rclone-extra-COPYING).
 - The TeraBox backend is an unofficial beta integration. It authenticates with the user's browser session cookie; TeraBox may change the service without notice.
 
@@ -24,7 +24,7 @@ The online setup downloads these runtime components only when required and verif
 - Version family: .NET 10 Windows Desktop Runtime, x64.
 - Download: official Microsoft .NET 10 channel installer (`https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe`).
 - The installer signature is validated as Microsoft-signed before it runs.
-- WPF and Windows Forms desktop apps require the Windows Desktop Runtime; it is not included in the compact setup ZIP.
+- WPF and Windows Forms desktop apps require the Windows Desktop Runtime; setup downloads it only when missing.
 
 ## Microsoft WebView2
 

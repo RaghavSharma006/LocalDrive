@@ -4,13 +4,13 @@ LocalDrive mounts your TeraBox account as a Windows drive letter. Browse and man
 
 ## Download and install
 
-1. Download and run `LocalDrive-<version>-Setup-win-x64.exe` from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). This single setup file extracts the compact app package, checks the required components, and launches LocalDrive when installation is complete.
-2. Accept the Windows prompt if setup needs to install the WinFsp filesystem driver.
-3. Open **LocalDrive** from the Start menu and sign in.
+1. Download and run `LocalDrive-<version>-Setup-win-x64.exe` from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). It installs LocalDrive and starts the app when setup is complete.
+2. Approve Windows prompts if setup needs to install the WinFsp driver or .NET Desktop Runtime.
+3. Sign in to TeraBox from LocalDrive.
 
-The `.exe` is a one-click wrapper around the compact ZIP. Both contain only the LocalDrive app and setup scripts; setup downloads a TeraBox-only engine and installs signed Windows runtimes only when missing. The release engine ZIP is about 8 MB and expands to an approximately 20 MB `rclone.exe`; it includes only the TeraBox backend and the mount, `lsjson`, and version commands LocalDrive uses. The archive is pinned to the app release by SHA-256. An internet connection is needed during setup. The installed app also uses the .NET 10 Desktop Runtime, WebView2 Runtime, and WinFsp. The setup EXE and ZIP remain small because they do not contain these runtime components.
+The release contains one downloadable EXE. It embeds LocalDrive and the compact, checksum-verified TeraBox engine; setup downloads signed .NET, WebView2, and WinFsp components only when they are missing. An internet connection is required during setup, and Windows may request permission to install system components. The engine is about 20 MB after extraction.
 
-The setup EXE is not code-signed, so Windows SmartScreen may show an unknown-publisher warning. The ZIP remains available for users who prefer to inspect and run the setup script directly.
+The setup EXE is not code-signed, so Windows SmartScreen may show an unknown-publisher warning.
 
 Settings and the encrypted sign-in are kept under `%LOCALAPPDATA%\LocalDrive`.
 
@@ -31,19 +31,19 @@ LocalDrive keeps its own WebView2 sign-in profile. It does not read another brow
 - **Cleanup target:** the GB value limits old cached data that rclone can remove. It does not reserve that amount of disk space. Open files and pending uploads can temporarily exceed it. New settings take effect after disconnecting and reconnecting.
 - **Safe disconnect:** LocalDrive checks for pending uploads before stopping the mount. Close files that are open from the virtual drive, wait for uploads, then disconnect.
 
-When the window is open, transfer checks slow to once a minute while idle and speed up while uploads are active. Closing the window stops UI polling and keeps the app in the notification area; the rclone mount continues handling drive requests and queued transfers. Open the window to refresh transfer status. Use the tray menu to reopen, disconnect, or exit. Exit checks for pending uploads before quitting.
+When the window is open, transfer checks slow to once a minute while idle and speed up while uploads are active. Closing the window stops UI polling and keeps the app in the notification area; rclone's periodic console stats are disabled, and its read buffer is set to zero to reduce idle work and per-file memory. The mounted engine remains resident so Windows can access T: and finish queued transfers. Use the tray menu to reopen, disconnect, or exit. Exit checks for pending uploads before quitting.
 
 Directory listings are cached for up to two minutes to reduce repeated cloud lookups. New remote changes may take that long to appear unless the folder is refreshed after the cache expires.
 
 ## Build from source
 
-Requirements: Windows x64 and the .NET 10 SDK. `Build-Standalone.ps1` creates a compact online setup ZIP and a one-click self-extracting setup executable. Tagged release builds also require Git and Go 1.27.0 to create the pinned TeraBox-only engine. The setup package downloads that engine and signed runtime installers, rather than bundling them.
+Requirements: Windows x64 and the .NET 10 SDK. `Build-Standalone.ps1` creates the setup package and one-click EXE. Tagged release builds also require Git and Go 1.27.0 to create and embed the pinned TeraBox-only engine. Missing signed Windows runtimes are fetched during setup.
 
 ```powershell
 ./Build-Standalone.ps1
 ```
 
-The outputs are named `LocalDrive-<version>-Setup-win-x64.exe` and `LocalDrive-<version>-Setup-win-x64.zip`. The source repository excludes generated binaries, downloaded runtimes, archives, caches, and logs. Third-party notices and required licenses are included in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
+The public release is `LocalDrive-<version>-Setup-win-x64.exe`; the build also produces an intermediate setup ZIP. The source repository excludes generated binaries, downloaded runtimes, archives, caches, and logs. Third-party notices and required licenses are included in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`licenses/`](licenses/).
 
 ## Security and support limits
 

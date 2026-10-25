@@ -314,7 +314,7 @@ internal sealed class DriveWindow : Window
             info.ArgumentList.Add("mount"); info.ArgumentList.Add("localdrive:"); info.ArgumentList.Add(selected);
             int cacheSizeGb = CacheSettings.LoadSizeGb();
             foreach (string arg in MountConfiguration.CommonArguments(cacheDirectory, cacheSizeGb)) info.ArgumentList.Add(arg);
-            foreach (string arg in new[] { "--vfs-write-back", "2s", "--vfs-cache-max-age", "24h", "--buffer-size", "0", "--dir-cache-time", "2m", "--volname", "TeraBox · LocalDrive", "--rc", "--rc-addr", $"127.0.0.1:{rcPort}", "--config", mountConfigPath }) info.ArgumentList.Add(arg);
+            foreach (string arg in new[] { "--stats", "0", "--vfs-write-back", "2s", "--vfs-cache-max-age", "24h", "--buffer-size", "0", "--dir-cache-time", "2m", "--volname", "TeraBox · LocalDrive", "--rc", "--rc-addr", $"127.0.0.1:{rcPort}", "--config", mountConfigPath }) info.ArgumentList.Add(arg);
             info.Environment["RCLONE_RC_USER"] = "localdrive"; info.Environment["RCLONE_RC_PASS"] = rcPassword;
             step = "mounting-windows-drive";
             ConnectionDiagnostics.Record(step);

@@ -8,7 +8,7 @@ if ($runningApp) { throw 'Close LocalDrive from its tray menu first. This safely
 
 if (-not $sourceRoot.Equals($installFull, [StringComparison]::OrdinalIgnoreCase)) {
     New-Item -ItemType Directory -Force -Path $installFull | Out-Null
-    Get-ChildItem -LiteralPath $sourceRoot -Force | ForEach-Object {
+    Get-ChildItem -LiteralPath $sourceRoot -Force | Where-Object { $_.Name -notlike 'LocalDrive-Rclone-*-win-x64.zip' } | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $installFull -Recurse -Force
     }
 }
@@ -78,9 +78,19 @@ try {
     $pinnedEngineUrl = 'https://github.com/gulp79/rclone-extra/releases/download/v1.75.2-extra/rclone-windows-amd64.zip'
     $installedEngineHash = if (Test-Path -LiteralPath $engineMarker) { (Get-Content -LiteralPath $engineMarker -Raw).Trim() } else { '' }
     if (-not (Test-Path -LiteralPath $rclone) -or $installedEngineHash -ne $pinnedEngineHash) {
-        Write-Host 'Installing or updating the compact TeraBox drive engine...'
-        $rcloneZip = Join-Path $scratch 'rclone-windows-amd64.zip'
-        Download-File $pinnedEngineUrl $rcloneZip
+        $embeddedEngine = Get-ChildItem -LiteralPath $sourceRoot -Filter 'LocalDrive-Rclone-*-win-x64.zip' -File | Select-Object -First 1
+        if ($embeddedEngine) {
+            Write-Host 'Installing or updating the compact TeraBox engine from this setup file...'
+            $rcloneZip = $embeddedEngine.FullName
+        }
+        else {
+            if (-not $pinnedEngineUrl) {
+                throw 'The compact drive engine is missing from this setup. Download the setup file again and rerun it.'
+            }
+            Write-Host 'Downloading the compact TeraBox drive engine...'
+            $rcloneZip = Join-Path $scratch 'rclone-windows-amd64.zip'
+            Download-File $pinnedEngineUrl $rcloneZip
+        }
         $actual = (Get-FileHash -LiteralPath $rcloneZip -Algorithm SHA256).Hash
         if ($actual -ne $pinnedEngineHash) { throw 'The TeraBox engine archive checksum did not match its pinned digest.' }
         $extract = Join-Path $scratch 'rclone'
