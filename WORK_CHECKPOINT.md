@@ -6,7 +6,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 - Version: `1.3.8`
 - Implementation commit: `05b3d33132cb1c4bc8eec9af0b77f94344552d19`.
-- Checkpoint commit before release: `244bd2fa2f9c9f3175bad27e158386caddc4e796`.
+- Checkpoint commit before release: `5f83dacdb6433ccc5681cf8477fa42bd00a5421a`.
 - Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
 
 ## Completed
