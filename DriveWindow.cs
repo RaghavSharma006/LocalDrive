@@ -271,7 +271,7 @@ internal sealed class DriveWindow : Window
             {
                 store.Save(session);
                 signedInSession = session;
-                status.Text = "Signed in. Checking your account…";
+                status.Text = "Signed in. Connecting to TeraBox…";
             }
         }
         catch (Exception e) { status.Text = "Sign-in could not finish (" + e.GetType().Name + "). Retry Sign in to TeraBox."; }
@@ -284,7 +284,7 @@ internal sealed class DriveWindow : Window
         var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); int port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop(); return port;
     }
 
-    private async Task ConnectAsync(TeraBoxSession? alreadyVerifiedSession = null)
+    private async Task ConnectAsync(TeraBoxSession? capturedSession = null)
     {
         State(true);
         string step = "checking-local-engine";
@@ -295,19 +295,11 @@ internal sealed class DriveWindow : Window
             string rclone = Path.Combine(Program.Engine, "tools", "rclone", "rclone.exe");
             if (!File.Exists(rclone)) throw new FileNotFoundException("Bundled TeraBox engine missing");
             if (letters.SelectedItem is not string selected) { status.Text = "No free drive letter is available."; return; }
-            var session = alreadyVerifiedSession ?? store.Load();
+            var session = capturedSession ?? store.Load();
             if (session == null) { status.Text = "Sign in to TeraBox first. The app will check the account and connect automatically after sign-in."; return; }
             if (DriveInfo.GetDrives().Any(d => d.Name.StartsWith(selected, StringComparison.OrdinalIgnoreCase))) { RefreshLetters(); status.Text = "That drive letter is now in use. Choose another."; return; }
-            if (alreadyVerifiedSession == null)
-            {
-                status.Text = "Checking your sign-in and whole-account folder access…";
-                ConnectionDiagnostics.Record("checking-terabox-session");
-                step = "listing-terabox-root";
-                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-                await TeraBoxSessionVerifier.VerifyAsync(session, timeout.Token);
-            }
-            ConnectionDiagnostics.Record("terabox-session-verified");
-            status.Text = "TeraBox sign-in verified. Preparing your drive…";
+            ConnectionDiagnostics.Record("terabox-session-loaded");
+            status.Text = "TeraBox sign-in captured. Preparing your drive…";
 
             step = "preparing-local-cache";
             status.Text = "Checking your selected cache folder…";
@@ -351,7 +343,7 @@ internal sealed class DriveWindow : Window
                     string stderr;
                     lock (engineOutputLock) stderr = string.Join("\n", engineStderr);
                     mountFailureCategory = MountDiagnostics.ClassifyEngineFailure(stderr);
-                    MountDiagnostics.RecordFailure(selected, mountExitCode.Value, mountFailureCategory);
+                    MountDiagnostics.RecordFailure(selected, mountExitCode.Value, mountFailureCategory, stderr);
                     throw new IOException("Filesystem engine exited");
                 }
                 if (Directory.Exists(selected + "\\"))
@@ -408,6 +400,10 @@ internal sealed class DriveWindow : Window
 
     private static string MountFailureMessage(string? category) => category switch
     {
+        "terabox-session-rejected" => "TeraBox declined the saved browser session while starting the drive. Sign in again and retry.",
+        "terabox-forbidden" => "The browser sign-in was captured, but TeraBox denied the drive request (HTTP 403). If it repeats after signing in again, TeraBox may be restricting this unofficial connection.",
+        "terabox-throttled" => "TeraBox temporarily limited the drive request. Wait a few minutes, then reconnect.",
+        "terabox-network-error" => "The drive engine could not reach TeraBox during mount. Check your network and retry.",
         "winfsp-unavailable" => "TeraBox sign-in is valid, but WinFsp did not accept the mount. The bundled driver or launcher is unavailable; run LocalDrive setup again, then restart Windows if it installs a driver.",
         "drive-letter-in-use" => "TeraBox sign-in is valid, but Windows rejected the selected drive letter as already in use. Choose another free letter and reconnect.",
         "mount-access-denied" => "TeraBox sign-in is valid, but Windows denied the mount request. Check the WinFsp service/driver state and retry LocalDrive without changing Windows security settings.",

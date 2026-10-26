@@ -53,7 +53,7 @@ The app does not bypass Windows security. Whether a particular executable runs f
 
 ## Troubleshooting
 
-- **Sign-in completes but drive does not connect:** review `%LOCALAPPDATA%\LocalDrive\connection-status.json` for the failed stage and error category. Mount failures also write `%LOCALAPPDATA%\LocalDrive\mount-failure.json` with the engine exit code and a safe category; raw provider output, cookies, signed URLs, and remote file names are never saved.
+- **Sign-in completes but drive does not connect:** review `%LOCALAPPDATA%\LocalDrive\connection-status.json` for the failed stage and error category. Mount failures also write `%LOCALAPPDATA%\LocalDrive\mount-failure.json` with the engine exit code, category, and a short redacted summary; raw provider output, cookies, signed URLs, paths, and quoted names are never saved.
 - **Drive letter is unavailable:** choose a free letter, then connect again.
 - **Cache cannot be used:** choose a writable folder on an available drive and keep it separate from the selected mount letter.
 - **Disconnect waits:** close applications that are using files on the drive and wait for pending uploads to finish.

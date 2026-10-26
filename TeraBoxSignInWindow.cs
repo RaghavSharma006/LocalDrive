@@ -14,7 +14,7 @@ internal sealed class TeraBoxSignInWindow : Window
 {
     internal TeraBoxSession? Session { get; private set; }
     private readonly WebView2 browser = new();
-    private readonly TextBlock status = new() { Text = "Sign in on TeraBox below. LocalDrive will verify the account before saving it.", Margin = new Thickness(16), TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock status = new() { Text = "Sign in on TeraBox below. LocalDrive will check access while connecting your drive.", Margin = new Thickness(16), TextWrapping = TextWrapping.Wrap };
     private readonly Button connect = new() { Content = "Connect my TeraBox", Margin = new Thickness(16), Padding = new Thickness(16, 10, 16, 10), IsEnabled = false };
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(3) };
     private static readonly string[] CookieOrigins =
@@ -97,13 +97,10 @@ internal sealed class TeraBoxSignInWindow : Window
             if (!explicitClick && fingerprint == lastCandidate && DateTimeOffset.UtcNow - lastAttempt < TimeSpan.FromSeconds(30)) return;
             lastCandidate = fingerprint; lastAttempt = DateTimeOffset.UtcNow;
 
-            status.Text = "Checking that this TeraBox sign-in can access your account…";
-            ConnectionDiagnostics.Record("verifying-terabox-session");
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
-            await TeraBoxSessionVerifier.VerifyAsync(new TeraBoxSession(cookieHeader, DateTimeOffset.UtcNow), timeout.Token);
             if (closed || !IsVisible) return;
             Session = new TeraBoxSession(cookieHeader, DateTimeOffset.UtcNow);
             ConnectionDiagnostics.Record("terabox-sign-in-received");
+            status.Text = "Sign-in captured. Connecting to your drive…";
             timer.Stop();
             DialogResult = true;
         }
