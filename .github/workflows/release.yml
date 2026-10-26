@@ -29,10 +29,8 @@ jobs:
           $project = [xml](Get-Content LocalDrive.csproj -Raw)
           $version = $project.Project.PropertyGroup.Version
           $engine = Join-Path $env:RUNNER_TEMP "LocalDrive-Rclone-$version-win-x64.zip"
-          $winfsp = Join-Path $env:RUNNER_TEMP 'winfsp-2.1.25156.msi'
           $sha256 = ./Build-SlimRclone.ps1 -OutputPath $engine
-          Invoke-WebRequest -Uri 'https://github.com/winfsp/winfsp/releases/download/v2.1/winfsp-2.1.25156.msi' -OutFile $winfsp
-          ./Build-Standalone.ps1 -RcloneArchivePath $engine -RcloneArchiveSha256 $sha256 -WinFspMsiPath $winfsp
+          ./Build-Standalone.ps1 -RcloneArchivePath $engine -RcloneArchiveSha256 $sha256
       - name: Build and package
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         shell: pwsh

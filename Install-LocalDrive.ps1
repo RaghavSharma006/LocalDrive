@@ -8,7 +8,7 @@ if ($runningApp) { throw 'Close LocalDrive from its tray menu first. This safely
 
 if (-not $sourceRoot.Equals($installFull, [StringComparison]::OrdinalIgnoreCase)) {
     New-Item -ItemType Directory -Force -Path $installFull | Out-Null
-    Get-ChildItem -LiteralPath $sourceRoot -Force | Where-Object { $_.Name -notlike 'LocalDrive-Rclone-*-win-x64.zip' -and $_.Name -ne 'winfsp-2.1.25156.msi' } | ForEach-Object {
+    Get-ChildItem -LiteralPath $sourceRoot -Force | Where-Object { $_.Name -notlike 'LocalDrive-Rclone-*-win-x64.zip' } | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $installFull -Recurse -Force
     }
 }
@@ -30,17 +30,9 @@ function Assert-MicrosoftSignature([string]$path) {
 try {
     $winFspLauncher = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'WinFsp\bin\launcher-x64.exe'
     if (-not (Test-Path -LiteralPath $winFspLauncher)) {
-        Write-Host 'WinFsp is missing. Installing the signed filesystem driver; Windows will ask for permission.'
-        $embeddedWinFsp = Join-Path $sourceRoot 'winfsp-2.1.25156.msi'
-        $msi = $embeddedWinFsp
-        if (Test-Path -LiteralPath $embeddedWinFsp -PathType Leaf) {
-            Write-Host 'Installing the signed WinFsp driver bundled in this setup...'
-        }
-        else {
-            Write-Host 'WinFsp is not bundled in this development build; downloading its signed installer...'
-            $msi = Join-Path $scratch 'winfsp-2.1.25156.msi'
-            Download-File 'https://github.com/winfsp/winfsp/releases/download/v2.1/winfsp-2.1.25156.msi' $msi
-        }
+        Write-Host 'WinFsp is missing. Downloading its official signed installer...'
+        $msi = Join-Path $scratch 'winfsp-2.1.25156.msi'
+        Download-File 'https://github.com/winfsp/winfsp/releases/download/v2.1/winfsp-2.1.25156.msi' $msi
         $actual = (Get-FileHash -LiteralPath $msi -Algorithm SHA256).Hash
         if ($actual -ne '073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A') { throw 'WinFsp installer checksum mismatch.' }
         $signature = Get-AuthenticodeSignature -LiteralPath $msi

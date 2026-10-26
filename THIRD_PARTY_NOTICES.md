@@ -1,6 +1,6 @@
 # Third-party components
 
-The single-file setup embeds the compact TeraBox engine and the unmodified, signed WinFsp installer. It downloads signed Microsoft runtimes only when required and verifies them before installation.
+The single-file setup embeds the compact TeraBox engine. WinFsp and Microsoft runtime installers download separately only when missing; setup checks their pinned hashes/signatures before installation.
 
 ## rclone-extra
 
@@ -18,7 +18,7 @@ The single-file setup embeds the compact TeraBox engine and the unmodified, sign
 - Installer: `winfsp-2.1.25156.msi`
 - SHA-256: `073A70E00F77423E34BED98B86E600DEF93393BA5822204FAC57A29324DB9F7A`
 - License: GPLv3 with the FLOSS exception; see [`licenses/WinFsp-License.txt`](licenses/WinFsp-License.txt).
-- The release build embeds the official unmodified installer and verifies its SHA-256 and Authenticode publisher before installation.
+- The release does not bundle the MSI. Setup downloads the official unmodified installer only when WinFsp is missing, then verifies its SHA-256 and Authenticode publisher before installation.
 
 ## Microsoft .NET Desktop Runtime
 
@@ -31,7 +31,7 @@ The single-file setup embeds the compact TeraBox engine and the unmodified, sign
 
 - WPF SDK package: `Microsoft.Web.WebView2` version `1.0.2903.40`, MIT license.
 - Runtime bootstrapper: official Evergreen bootstrapper from https://developer.microsoft.com/microsoft-edge/webview2/.
-- Microsoft permits bundling the small Evergreen bootstrapper with an app; it downloads the runtime only when setup detects it is missing. The bootstrapper signature is checked by the package script.
+- Setup downloads the bootstrapper only when the runtime is missing, then verifies Microsoft's Authenticode signature before running it.
 
 ## .NET
 

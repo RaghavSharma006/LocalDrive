@@ -2,15 +2,15 @@
 
 LocalDrive is a Windows desktop app that mounts a TeraBox account as a drive letter. Browse files in File Explorer and compatible Windows apps; choose where its working cache is stored.
 
-> **Status:** Windows x64, version 1.3.9. The latest published installer is available from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). The TeraBox connector is an unofficial, community-maintained beta. A successful browser sign-in does not guarantee that TeraBox will accept the session when connecting the drive.
+> **Status:** Windows x64, version 1.4.0. The latest published installer is available from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). The TeraBox connector is an unofficial, community-maintained beta. A successful browser sign-in does not guarantee that TeraBox will accept the session when connecting the drive.
 
 ## Install
 
 1. Download `LocalDrive-<version>-Setup-win-x64.exe` from [Releases](https://github.com/RaghavSharma006/LocalDrive/releases).
-2. Run setup. Approve the normal Windows administrator prompt if WinFsp must be installed.
+2. Run setup. If WinFsp is missing, setup downloads its official signed installer, verifies its SHA-256 and Authenticode signature, and asks Windows to install it with the normal administrator prompt.
 3. Sign in to TeraBox in LocalDrive, select a free drive letter, then choose **Connect drive**.
 
-The one-file installer bundles LocalDrive, its compact TeraBox-only rclone engine, and the unmodified signed WinFsp installer. It downloads signed Microsoft .NET Desktop Runtime and WebView2 installers only when those prerequisites are missing. Setup needs internet access for those downloads. Windows SmartScreen can identify the setup EXE as an unknown publisher because the project does not have a code-signing certificate.
+The one-file installer bundles LocalDrive and its compact TeraBox-only engine. WinFsp is not included: setup downloads the official WinFsp 2.1 installer only if the driver is missing, then checks the pinned SHA-256 and publisher signature before installing it. .NET Desktop Runtime and WebView2 are also fetched from Microsoft only when missing. Internet access is needed for any missing prerequisite. Windows SmartScreen can identify the setup EXE as an unknown publisher because the project does not have a code-signing certificate.
 
 ## Use the drive and cache
 
@@ -41,12 +41,13 @@ This app uses a community-maintained, unofficial TeraBox backend because the off
 
 ## Build and verify
 
-Requirements for a source build: Windows x64 and the .NET 10 SDK. A tagged release additionally builds the compact engine from the pinned `rclone-extra` source and embeds the official WinFsp installer; Git and Go are used by the release workflow.
+Requirements for a source build: Windows x64 and the .NET 10 SDK. A tagged release additionally builds the compact engine from the pinned `rclone-extra` source; Git and Go are used by the release workflow. WinFsp is downloaded and signature-checked by the installer when needed.
 
 ```powershell
 dotnet publish .\LocalDrive.csproj -c Release -r win-x64 --self-contained false
-dotnet run --project .\LocalDrive.csproj -c Release -- --verify-file-ops
 ```
+
+The optional `--verify-file-ops` mode creates a random test folder and file under `T:\`, reads and copies the file, then deletes the test items. Run it only while `T:` is the intended test drive and you are comfortable creating and deleting temporary items in that account.
 
 To make the local one-file setup package without a release engine, run:
 
@@ -60,7 +61,6 @@ That source package may fetch its pinned engine during installation. GitHub Acti
 
 - [Feature status and known limits](FEATURE_STATUS.md)
 - [Release history](CHANGELOG.md)
-- [Project brief](PROJECT_BRIEF.md)
 - [Third-party notices and licenses](THIRD_PARTY_NOTICES.md)
 - [Security reporting](SECURITY.md)
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+
+- Stop bundling the WinFsp MSI in the setup EXE. Setup downloads the official installer only when WinFsp is absent and verifies its pinned hash and publisher signature before installation.
+- Remove internal checkpoint and redundant project-brief files from the current GitHub tree; keep the developer checkpoint only in the local working copy.
+- Clarify setup downloads and prerequisites in the user documentation.
+
 ## 1.3.9
 
 - Improve light/dark theme contrast for secondary text, control borders, hover, selection, and disabled states.
