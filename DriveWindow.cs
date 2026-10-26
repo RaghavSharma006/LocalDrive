@@ -15,9 +15,11 @@ using System.Windows.Media;
 using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;
 using TextBox = System.Windows.Controls.TextBox;
+using Brush = System.Windows.Media.Brush;
 using Color = System.Windows.Media.Color;
 using Brushes = System.Windows.Media.Brushes;
 using FontFamily = System.Windows.Media.FontFamily;
+using SystemColors = System.Windows.SystemColors;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
 
 namespace LocalDrive;
@@ -44,6 +46,7 @@ internal sealed class DriveWindow : Window
     private string? drive;
     private bool busy, closing;
     private bool darkTheme;
+    private Brush? currentSecondaryBrush;
     private readonly object engineOutputLock = new();
     private readonly Queue<string> engineStderr = new();
     private readonly System.Windows.Forms.NotifyIcon trayIcon = new() { Text = "LocalDrive", Icon = System.Drawing.SystemIcons.Application };
@@ -225,21 +228,56 @@ internal sealed class DriveWindow : Window
 
     private void ApplyTheme()
     {
-        var background = new SolidColorBrush(darkTheme ? Color.FromRgb(18, 20, 24) : Color.FromRgb(246, 248, 251));
-        var card = new SolidColorBrush(darkTheme ? Color.FromRgb(31, 34, 41) : Colors.White);
-        var foreground = new SolidColorBrush(darkTheme ? Color.FromRgb(238, 240, 244) : Color.FromRgb(28, 34, 44));
-        var buttonBackground = new SolidColorBrush(darkTheme ? Color.FromRgb(48, 52, 62) : Color.FromRgb(235, 239, 245));
+        Brush background = BrushFrom(darkTheme ? 0x121418 : 0xF6F8FB);
+        Brush card = BrushFrom(darkTheme ? 0x1F2229 : 0xFFFFFF);
+        Brush foreground = BrushFrom(darkTheme ? 0xEEF0F4 : 0x1C222C);
+        Brush secondary = BrushFrom(darkTheme ? 0xAAB3C2 : 0x64748B);
+        Brush border = BrushFrom(darkTheme ? 0x3B414D : 0xE2E7EE);
+        Brush buttonBackground = BrushFrom(darkTheme ? 0x30343E : 0xEEF2F7);
+        Brush hover = BrushFrom(darkTheme ? 0x3B4351 : 0xE0E8F3);
+        Brush pressed = BrushFrom(darkTheme ? 0x48566B : 0xD2DCE9);
+        Brush disabledBackground = BrushFrom(darkTheme ? 0x282B31 : 0xEEF0F3);
+        Brush disabledForeground = BrushFrom(darkTheme ? 0x858B95 : 0x838C99);
         Background = background;
         foreach (var element in Descendants(this))
         {
-            if (element is Border border) { border.Background = card; border.BorderBrush = buttonBackground; }
-            if (element is TextBlock text) text.Foreground = foreground;
-            if (element is Button button) { button.Background = buttonBackground; button.Foreground = foreground; }
-            if (element is ComboBox combo) { combo.Background = buttonBackground; combo.Foreground = foreground; }
-            if (element is TextBox box) { box.Background = buttonBackground; box.Foreground = foreground; box.CaretBrush = foreground; }
+            if (element is Border panel) { panel.Background = card; panel.BorderBrush = border; }
+            if (element is TextBlock text)
+                text.Foreground = Equals(text.Foreground, Brushes.SlateGray) || Equals(text.Foreground, currentSecondaryBrush) ? secondary : foreground;
+            if (element is Button button)
+            {
+                button.Background = buttonBackground; button.Foreground = foreground; button.BorderBrush = border;
+                button.Resources[SystemColors.HighlightBrushKey] = hover;
+                button.Resources[SystemColors.HighlightTextBrushKey] = foreground;
+                button.Resources[SystemColors.ControlBrushKey] = buttonBackground;
+                button.Resources[SystemColors.ControlTextBrushKey] = foreground;
+                button.Resources[SystemColors.GrayTextBrushKey] = disabledForeground;
+                button.Resources[SystemColors.ControlDarkBrushKey] = pressed;
+            }
+            if (element is ComboBox combo)
+            {
+                combo.Background = buttonBackground; combo.Foreground = foreground; combo.BorderBrush = border;
+                combo.Resources[SystemColors.HighlightBrushKey] = hover;
+                combo.Resources[SystemColors.HighlightTextBrushKey] = foreground;
+                combo.Resources[SystemColors.WindowBrushKey] = card;
+                combo.Resources[SystemColors.WindowTextBrushKey] = foreground;
+                combo.Resources[SystemColors.ControlBrushKey] = buttonBackground;
+                combo.Resources[SystemColors.ControlTextBrushKey] = foreground;
+            }
+            if (element is TextBox box)
+            {
+                box.Background = buttonBackground; box.Foreground = foreground; box.CaretBrush = foreground;
+                box.BorderBrush = border;
+                box.Resources[SystemColors.HighlightBrushKey] = hover;
+                box.Resources[SystemColors.HighlightTextBrushKey] = foreground;
+                box.Resources[SystemColors.GrayTextBrushKey] = disabledForeground;
+            }
         }
+        currentSecondaryBrush = secondary;
         themeToggle.Content = darkTheme ? "Light mode" : "Dark mode";
     }
+
+    private static SolidColorBrush BrushFrom(int rgb) => new(Color.FromRgb((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb));
 
     private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
     {

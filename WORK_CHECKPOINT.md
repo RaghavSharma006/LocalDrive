@@ -83,3 +83,18 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Verification: .NET publish succeeded, `--verify-file-ops` exited 0, and `git diff --check` passed. Live TeraBox mount/read/write remains unverified because the saved session was rejected before the mount during the latest retry.
 - Deployment: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.8. GitHub Actions run `40253380744` succeeded. Release contains one setup asset, `LocalDrive-1.3.8-Setup-win-x64.exe` (10,080,256 bytes).
 - Remaining: user validates a fresh sign-in and live mount. The current saved session failed before mount during this investigation, so no live TeraBox mount/read/write result is claimed.
+
+## UI, documentation, and release finalization (v1.3.9)
+
+- Implementation commit: pending local commit.
+- Updated light/dark theme colors so secondary labels, borders, button/combobox/textbox states, selections, and disabled controls use readable theme-specific colors.
+- Rewrote the user README around the current v1.3.8 behavior; added `CHANGELOG.md` and `SECURITY.md`, updated feature status and project brief, and included these docs in generated setup bundles. Documented that LocalDrive source has no license grant and the TeraBox backend is unofficial beta.
+- Built a compact TeraBox-only engine from pinned rclone-extra commit `56bf13885494819bc801302ddf881279bdac7262`; archive SHA-256 `DCF1F03381A37B5ACC05B302D6A26A60FD2F3E169DE441579B02E360189E32FA`.
+- Built one-file setup `LocalDrive-1.3.9-Setup-win-x64.exe` (10,092,544 bytes) and setup ZIP (9,898,534 bytes). It contains the compact engine, the pinned WinFsp installer, licenses, README, changelog, feature status, security policy, and project brief.
+- Verification: .NET 10.0.402 Windows x64 publish succeeded; all 5 PowerShell scripts parsed; `git diff --check` passed. The exact package engine passed TeraBox backend, mount, `lsjson`, and version command checks; WebDAV was absent. WinFsp MSI Authenticode status was valid for NAVIMATICS LLC.
+- App file-operation verification exited 0 on the active T: drive (random test directory and files are cleaned by the verification code). A separate fresh root-list probe failed with sanitized `terabox-session-rejected` / engine exit 1; this means a fresh mount is not verified even though operations through the already-active T: mount passed.
+- Isolated WinFsp local mount on Y: passed read, write/read-back, SHA-256, copy, delete, and clean unmount. Temporary files and directory were removed; the pre-existing T: rclone process remains running.
+- Security review scanned 178 Git objects for private-key/token-shaped content and found none; tracked object names contain source, documentation, license, and tags, not installer binaries, credential stores, logs, or cache data. Existing commit history uses the same email already shown on the public GitHub profile.
+- Visual limitation: there was no LocalDrive window available to capture; a hidden background process currently owns the active T: mount. Theme changes compile and package, but fresh screenshots of both themes are not claimed.
+- Deployment status: local package ready; commit, push, v1.3.9 release, CI result, and repository visibility are pending.
+- Remaining steps: commit and push the changes; tag `v1.3.9`; verify the GitHub Actions release build; then obtain action-time confirmation before changing the private repository to public. Preserve the current Git history; do not rewrite old commits as part of this release.

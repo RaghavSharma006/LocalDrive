@@ -27,7 +27,10 @@ $licenses = Join-Path $publish 'licenses'
 New-Item -ItemType Directory -Force -Path $licenses | Out-Null
 foreach ($file in @(
     'README.md',
+    'CHANGELOG.md',
+    'FEATURE_STATUS.md',
     'PROJECT_BRIEF.md',
+    'SECURITY.md',
     'THIRD_PARTY_NOTICES.md',
     'Install-LocalDrive.ps1',
     'Uninstall-LocalDrive.ps1',

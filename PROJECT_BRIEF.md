@@ -1,9 +1,13 @@
-# LocalDrive build prompt
+# LocalDrive project brief
 
-Build LocalDrive as a complete, standalone Windows desktop app for mounting the user's TeraBox account as a read/write drive. Give it its own clear, restrained visual identity and a polished, easy-to-understand interface. Do not require, launch, bundle, or display branding from other drive products.
+LocalDrive is a stand-alone Windows x64 app for mounting a user's TeraBox account as a read/write drive. Its product goals are:
 
-The app should sign in to TeraBox in its own secure sign-in surface, validate access before saving a session, and protect saved credentials with Windows DPAPI. It should mount a configurable drive letter through WinFsp and the bundled-at-build-time rclone TeraBox backend. It should run quietly in the notification area, use little idle CPU, and safely wait for pending writes before disconnecting.
+- Provide a clear WPF interface for sign-in, drive connection, transfer status, cache settings, and light/dark appearance.
+- Store the TeraBox web session with Windows DPAPI and use the user's own embedded WebView2 login profile.
+- Mount with the pinned, compact TeraBox-only rclone engine through WinFsp; keep account access and cloud file operations in the engine.
+- Allow a user-selected cache folder and cleanup target, explain staged writes, and protect pending uploads during disconnect/exit.
+- Stay in the notification area when the main window closes and reduce UI polling while hidden or idle.
+- Ship as one setup EXE, bundle the signed WinFsp installer and compact engine, fetch signed Microsoft runtimes only when missing, and publish via GitHub Releases.
+- Keep the repository source-focused: exclude generated packages, runtime downloads, local logs, settings, cache data, and authentication material.
 
-Let the user choose any writable local cache folder and set a cache cleanup target. Explain that reads are downloaded on demand, writes are staged locally then uploaded, and the target is a cleanup limit rather than a reserved disk allocation. Keep light and dark themes, show connection and pending-transfer status, and make sign-in, connect, open, disconnect, cache selection, and exit behavior clear.
-
-Ship a Git-ready source project, a complete README with install/build/use/security/troubleshooting guidance, license notices, a reproducible Windows package build, and a GitHub release workflow. Exclude generated binaries, caches, secrets, old application files, and unrelated integrations from the source bundle. Preserve existing TeraBox, read/write, cache, and mount behavior. Verify compilation and package contents; clearly distinguish those checks from a live account test.
+The TeraBox backend is unofficial beta. A successful sign-in capture does not guarantee that the provider will accept the session when the drive mount starts. Record build, offline driver, cached-session, live connection, and file-operation results separately; never describe a local test as proof that remote TeraBox access works.

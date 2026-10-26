@@ -1,16 +1,17 @@
-# LocalDrive feature status
+# Feature status
 
-LocalDrive is a standalone Windows desktop app. It uses an open-source TeraBox backend in the pinned `rclone-extra` release, started as a child process. This backend is community-maintained, nonofficial, and upstream marks the TeraBox integration beta. The app captures browser cookies in its own WebView2 profile and verifies the account root through the backend before saving the session.
+Current source version: **1.3.9**.
 
-| Capability | Status |
-| --- | --- |
-| TeraBox sign-in | Embedded WebView2; reads the active TeraBox origin plus supported account domains, requires the session cookie, verifies a root listing, and stores the session with Windows DPAPI. Personal Chrome cookie import is intentionally absent. |
-| Whole-account root | Uses the cookie-authenticated TeraBox backend; not limited to an official API app folder. Provider behavior can change. |
-| Virtual drive | rclone + WinFsp, configurable letter, read/write mount, VFS full cache, executable permissions 0755. |
-| Cache | User-selected writable path and 1–4096 GB cleanup target; changes apply after reconnect. |
-| Background operation | Notification-area tray, close-to-tray, saved-session reconnect, controlled disconnect that checks VFS pending uploads. UI transfer polling stops while the window is hidden; while visible it polls once a minute when idle and more often during uploads. |
-| Appearance | Light and dark themes. |
-| Git-ready bundle | One downloadable self-extracting setup EXE embeds the app, compact TeraBox engine, and official signed WinFsp installer. Setup fetches signed .NET and WebView2 prerequisites only when missing. Engine checksum, WinFsp checksum/signature, and Microsoft installer signatures are verified before install. GitHub Actions publishes the EXE on `v*` tags. The unsigned EXE may trigger a Windows SmartScreen warning. |
-| Limitations | TeraBox cookies expire and the backend is unofficial beta. Google login may refuse an embedded browser; use TeraBox QR/email when offered. |
+| Area | Current behavior | Known limit |
+| --- | --- | --- |
+| TeraBox sign-in | Embedded WebView2; session encrypted with Windows DPAPI for the current user. | The backend is unofficial beta. A browser login can succeed while a later account or mount request is rejected. |
+| Account scope | Mounts the account through the community TeraBox backend. | Provider behavior, throttling, and cookie expiry can interrupt access. |
+| Windows drive | rclone `cmount` with WinFsp; configurable drive letter, read/write, 0755 permissions, full VFS cache. | Requires Windows x64 and WinFsp. Executable launch behavior is also subject to Windows and application-specific restrictions. |
+| Cache | User-selectable writable folder and a 1–4096 GB cleanup target. | The target is not reserved disk space. Open files and pending uploads may temporarily exceed it. Changes apply after reconnect. |
+| Background | Notification-area operation; transfer polling stops while the window is hidden. Disconnect/exit checks pending uploads. | The engine remains resident while mounted. |
+| Appearance | Light and dark themes with explicit control, hover, selection, disabled-state, and status-text colors. | The current session has an active hidden mount process and no LocalDrive window to inspect; fresh light/dark screenshots remain unverified. |
+| Distribution | Single setup EXE bundles LocalDrive, compact TeraBox engine, and signed WinFsp installer. | .NET Desktop Runtime and WebView2 download during setup if absent. Setup is unsigned and may show an unknown-publisher warning. |
 
-The compact backend and one-file installer have been built locally. A clean installation, live TeraBox sign-in, and read/write transfer still require verification in a Windows user session with the account available.
+## Verification boundary
+
+Local source/build and isolated drive-engine tests do not prove that the current TeraBox session can mount or transfer files. A live TeraBox read/write test requires a valid session accepted by the provider. See `WORK_CHECKPOINT.md` for the latest run-specific results.
