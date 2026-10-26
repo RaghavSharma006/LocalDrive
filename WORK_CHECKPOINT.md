@@ -86,7 +86,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## UI, documentation, and release finalization (v1.3.9)
 
-- Implementation commit: pending local commit.
+- Implementation commit: `9f5546ce96f216d172c908dc7f733482189a5702`.
 - Updated light/dark theme colors so secondary labels, borders, button/combobox/textbox states, selections, and disabled controls use readable theme-specific colors.
 - Rewrote the user README around the current v1.3.8 behavior; added `CHANGELOG.md` and `SECURITY.md`, updated feature status and project brief, and included these docs in generated setup bundles. Documented that LocalDrive source has no license grant and the TeraBox backend is unofficial beta.
 - Built a compact TeraBox-only engine from pinned rclone-extra commit `56bf13885494819bc801302ddf881279bdac7262`; archive SHA-256 `DCF1F03381A37B5ACC05B302D6A26A60FD2F3E169DE441579B02E360189E32FA`.
