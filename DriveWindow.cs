@@ -12,6 +12,7 @@ using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Interop;
 using Button = System.Windows.Controls.Button;
 using ComboBox = System.Windows.Controls.ComboBox;
 using TextBox = System.Windows.Controls.TextBox;
@@ -41,11 +42,13 @@ internal sealed class DriveWindow : Window
     private readonly TextBlock transfers = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     private readonly System.Windows.Threading.DispatcherTimer transferTimer = new() { Interval = TimeSpan.FromSeconds(60) };
     private bool checkingTransfers;
+    private string? statusBeforeTray;
     private Process? process;
     private HttpClient? rc;
     private string? drive;
     private bool busy, closing;
     private bool darkTheme;
+    private readonly bool previewMode;
     private Brush? currentSecondaryBrush;
     private readonly object engineOutputLock = new();
     private readonly Queue<string> engineStderr = new();
@@ -53,8 +56,9 @@ internal sealed class DriveWindow : Window
     private readonly TeraBoxSessionStore store = new(Path.Combine(Program.Home, "terabox.session.dpapi"));
     private readonly string mountConfigPath = Path.Combine(Program.Home, "rclone-mount.conf");
 
-    public DriveWindow(bool connectOnStart = false)
+    public DriveWindow(bool connectOnStart = false, bool previewMode = false)
     {
+        this.previewMode = previewMode;
         Title = "LocalDrive"; Width = 900; Height = 700; MinWidth = 760; MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = new SolidColorBrush(Color.FromRgb(246, 248, 251));
@@ -113,12 +117,35 @@ internal sealed class DriveWindow : Window
         themeToggle.Click += (_, _) => ToggleTheme();
         open.Click += (_, _) => { if (drive != null) Process.Start(new ProcessStartInfo("explorer.exe", drive + "\\") { UseShellExecute = true }); };
         Closing += OnClosing;
+        SourceInitialized += (_, _) =>
+        {
+            HwndSource? source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            source?.AddHook((IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+            {
+                if (message != Program.RestoreWindowMessage) return IntPtr.Zero;
+                Dispatcher.BeginInvoke(RestoreFromTray);
+                handled = true;
+                return IntPtr.Zero;
+            });
+        };
         transferTimer.Tick += async (_, _) => await UpdateTransfersAsync();
         ConfigureTray();
         darkTheme = CacheSettings.LoadDarkTheme(); ApplyTheme();
-        bool savedLogin = store.Load() != null;
-        if (connectOnStart || savedLogin) Loaded += async (_, _) => await ConnectAsync();
-        if (savedLogin) status.Text = "Saved TeraBox login found. Connecting automatically…";
+        // The first theme pass happens before WPF has built the visual tree. Run
+        // it again once controls exist so dark mode reaches cards and child text.
+        Loaded += (_, _) => ApplyTheme();
+        bool savedLogin = !previewMode && store.Load() != null;
+        if (previewMode)
+        {
+            login.IsEnabled = false;
+            mount.IsEnabled = false;
+            status.Text = "UI preview — drive connection is disabled.";
+        }
+        else
+        {
+            if (connectOnStart || savedLogin) Loaded += async (_, _) => await ConnectAsync();
+            if (savedLogin) status.Text = "Saved TeraBox login found. Connecting automatically…";
+        }
     }
 
     private static Border Card(UIElement content) => new()
@@ -196,6 +223,8 @@ internal sealed class DriveWindow : Window
     private void RestoreFromTray()
     {
         Show(); ShowInTaskbar = true; WindowState = WindowState.Normal; Activate();
+        if (!string.IsNullOrEmpty(statusBeforeTray)) status.Text = statusBeforeTray;
+        statusBeforeTray = null;
         if (process != null && !process.HasExited && rc != null)
         {
             transferTimer.Start();
@@ -291,7 +320,7 @@ internal sealed class DriveWindow : Window
 
     private void State(bool operation)
     {
-        busy = operation; login.IsEnabled = !busy && process == null; mount.IsEnabled = !busy && process == null;
+        busy = operation; login.IsEnabled = !previewMode && !busy && process == null; mount.IsEnabled = !previewMode && !busy && process == null;
         chooseCache.IsEnabled = !busy;
         saveCacheSize.IsEnabled = !busy;
         letters.IsEnabled = !busy && process == null; unmount.IsEnabled = !busy && process != null; open.IsEnabled = !busy && process != null;
@@ -510,6 +539,7 @@ internal sealed class DriveWindow : Window
         if (closing) return;
         e.Cancel = true;
         if (busy) { status.Text = "Wait for the current operation to finish before closing."; return; }
+        statusBeforeTray = status.Text;
         Hide(); ShowInTaskbar = false;
         transferTimer.Stop();
         trayIcon.Visible = true;

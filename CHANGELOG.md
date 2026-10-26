@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.1
+
+- Reapply theme colors after the WPF visual tree loads so dark mode styles the cards and their child controls correctly.
+- Restore the existing notification-area window when LocalDrive is launched again, and preserve the real status message after reopening.
+- Add a `--preview-ui` mode for checking settings without signing in or mounting a drive.
+- Update the user guide and feature status with the preview and tray restore behavior.
+
 ## 1.4.0
 
 - Stop bundling the WinFsp MSI in the setup EXE. Setup downloads the official installer only when WinFsp is absent and verifies its pinned hash and publisher signature before installation.

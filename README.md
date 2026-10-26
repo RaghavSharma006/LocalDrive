@@ -2,7 +2,7 @@
 
 LocalDrive is a Windows desktop app that mounts a TeraBox account as a drive letter. Browse files in File Explorer and compatible Windows apps; choose where its working cache is stored.
 
-> **Status:** Windows x64, version 1.4.0. The latest published installer is available from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). The TeraBox connector is an unofficial, community-maintained beta. A successful browser sign-in does not guarantee that TeraBox will accept the session when connecting the drive.
+> **Status:** Windows x64, version 1.4.1. The latest published installer is available from [GitHub Releases](https://github.com/RaghavSharma006/LocalDrive/releases). The TeraBox connector is an unofficial, community-maintained beta. A successful browser sign-in does not guarantee that TeraBox will accept the session when connecting the drive.
 
 ## Install
 
@@ -19,7 +19,7 @@ The one-file installer bundles LocalDrive and its compact TeraBox-only engine. W
 - **Write:** Changes are staged in the cache and uploaded after the application closes the file. Wait for pending uploads before disconnecting or exiting.
 - **Cache folder:** Choose a writable folder on any available drive other than the selected mount letter. Moving the cache to another disk moves future cache use there; it does not copy or erase data from your TeraBox account.
 - **Cleanup target:** The 1–4096 GB value is a cleanup limit for old cached data, not reserved space. Open files and pending uploads may temporarily exceed it. Folder and size changes apply after reconnecting.
-- **Background:** Closing the window sends LocalDrive to the notification area. The mounted engine stays running to serve Windows file requests and complete uploads. When hidden, the UI stops transfer polling. Use the tray menu to reconnect, disconnect, reopen the window, or exit.
+- **Background:** Closing the window sends LocalDrive to the notification area. The mounted engine stays running to serve Windows file requests and complete uploads. When hidden, the UI stops transfer polling. Use the tray menu to reconnect, disconnect, reopen the window, or exit. Starting LocalDrive again restores the existing window.
 
 Directory listings are cached for up to two minutes. Recent remote changes may take that long to appear. The mount uses 0755 file and directory permission modes for Windows execute access; Windows security and individual applications can still prevent an executable from launching from a cloud-backed drive.
 
@@ -38,6 +38,8 @@ This app uses a community-maintained, unofficial TeraBox backend because the off
 - **Cache folder rejected:** choose a writable directory on an attached drive, separate from the selected virtual drive.
 - **Disconnect waits or fails:** close files opened from the virtual drive and wait for uploads to finish before retrying.
 - **Executable will not launch:** first verify the file can be read and copied. Execution also depends on Windows' loader, the remote file response, and application requirements; LocalDrive does not disable Windows protections.
+
+To inspect the settings UI without signing in or mounting a drive, start `LocalDrive.exe --preview-ui` from its install folder. In this preview, sign-in and connect are disabled.
 
 ## Build and verify
 
