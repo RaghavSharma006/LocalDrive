@@ -6,7 +6,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 - Version: `1.3.8`
 - Implementation commit: `05b3d33132cb1c4bc8eec9af0b77f94344552d19`.
-- Checkpoint commit before release: `5f83dacdb6433ccc5681cf8477fa42bd00a5421a`.
+- Checkpoint commit before release: `abc2d7819f3e6a76e9b3ad9c0720370204cd341c`.
 - Release purpose: build and distribute a compact, TeraBox-only rclone engine while keeping the one-click app downloads small.
 
 ## Completed
@@ -60,7 +60,7 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 
 ## Remaining work
 
-1. Publish `v1.3.8` through the existing GitHub release workflow, then user confirms a fresh TeraBox sign-in/mount plus read/write operations. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval.
+1. User installs `v1.3.8` and confirms a fresh TeraBox sign-in/mount plus read/write operations. Setup installs the bundled WinFsp driver only if it is missing; Windows will request administrator approval.
 2. If connection fails, inspect `%LOCALAPPDATA%\LocalDrive\connection-status.json` and the privacy-safe `%LOCALAPPDATA%\LocalDrive\mount-failure.json` summary.
 
 ## TeraBox connect and mount diagnostics (v1.3.7 released)
@@ -74,11 +74,12 @@ Updated 25 October 2026. Repository: https://github.com/RaghavSharma006/LocalDri
 - Deployment: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.7. GitHub Actions run `40182767493` completed successfully. Release has exactly one asset: `LocalDrive-1.3.7-Setup-win-x64.exe` (10,076,160 bytes).
 - Remaining: user validates a fresh sign-in and live mount. My live saved-session checks were intermittent and did not reach WinFsp. If the mount engine exits, inspect the sanitized `mount-failure.json` category and continue from that specific failure.
 
-## TeraBox mount startup follow-up (v1.3.8 in progress)
+## TeraBox mount startup follow-up (v1.3.8 released)
 
 - Implementation commit: `05b3d33132cb1c4bc8eec9af0b77f94344552d19`.
 - Read the user's v1.3.7 diagnostics: drive `T:`, rclone exit code `1`, category `unclassified-mount-error`, and WinFsp launcher present. The saved-session root check later failed before mount, so no authenticated current mount reproduction was available.
 - Isolated WinFsp: full rclone 1.75.2-extra and a compact-equivalent `CGO_ENABLED=0`, `cmount` build with the local backend both mounted and read a local folder on temporary `Y:`. The shipped compact engine intentionally omits the local backend; this test build added it solely for the driver check. Both mounts were unmounted after the read.
 - Source tracing found separate TeraBox API checks during sign-in/preflight and another when rclone starts the mount. Version 1.3.8 removes the explicit preflight requests so the actual mount performs the auth check once; mount failure now writes only allowlisted diagnostic words and standard OS codes, never raw stderr.
 - Verification: .NET publish succeeded, `--verify-file-ops` exited 0, and `git diff --check` passed. Live TeraBox mount/read/write remains unverified because the saved session was rejected before the mount during the latest retry.
-- Deployment: pending. Next: checkpoint commit, push source, tag `v1.3.8`, verify CI and the single setup EXE, then request one fresh sign-in/mount validation.
+- Deployment: https://github.com/RaghavSharma006/LocalDrive/releases/tag/v1.3.8. GitHub Actions run `40253380744` succeeded. Release contains one setup asset, `LocalDrive-1.3.8-Setup-win-x64.exe` (10,080,256 bytes).
+- Remaining: user validates a fresh sign-in and live mount. The current saved session failed before mount during this investigation, so no live TeraBox mount/read/write result is claimed.
